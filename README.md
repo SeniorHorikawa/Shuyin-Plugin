@@ -1,6 +1,6 @@
 <div align="center">
 
-# 原神插件 · Yuanshen-Plugin
+# 书音插件 · Shuyin-Plugin
 
 **一个跑在云崽（Yunzai）上的「小说 + 酷狗」全能小助手**
 
@@ -9,12 +9,14 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org)
 [![Yunzai](https://img.shields.io/badge/Yunzai-TRSS%20%2F%20Miao-ff69b4.svg)](https://github.com/TimeRainStarSky/Yunzai)
-[![GitHub](https://img.shields.io/github/stars/SeniorHorikawa/Yuanshen-Plugin?style=social)](https://github.com/SeniorHorikawa/Yuanshen-Plugin)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/SeniorHorikawa/Yuanshen-Plugin/pulls)
+[![GitHub](https://img.shields.io/github/stars/SeniorHorikawa/Shuyin-Plugin?style=social)](https://github.com/SeniorHorikawa/Shuyin-Plugin)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/SeniorHorikawa/Shuyin-Plugin/pulls)
 
 <sub>番茄 / 七猫 搜索 · 起点 / 七猫 / 番茄 整书下载 · 酷狗扫码登录与刷歌</sub>
 
 </div>
+
+> 🤖 **纯 AI 出品** —— 本插件的全部代码、文档与命名均由 AI 从零生成，无人工编写成分。请自行评估与测试后再投入使用。
 
 ---
 
@@ -51,10 +53,10 @@
 cd Yunzai/plugins
 
 # 克隆本插件
-git clone https://github.com/SeniorHorikawa/Yuanshen-Plugin.git
+git clone https://github.com/SeniorHorikawa/Shuyin-Plugin.git
 
 # 安装依赖（插件本体近乎零依赖，仅格式化工具）
-cd Yuanshen-Plugin && pnpm install
+cd Shuyin-Plugin && pnpm install
 ```
 
 重启云崽即可自动注册使用。
@@ -66,7 +68,7 @@ cd Yuanshen-Plugin && pnpm install
 配置文件位于**插件目录**下，首次加载时若不存在会自动生成模板：
 
 ```text
-Yunzai/plugins/Yuanshen-Plugin/config/novel.yaml
+Yunzai/plugins/Shuyin-Plugin/config/novel.yaml
 ```
 
 | 字段 | 类型 | 说明 |
@@ -109,8 +111,6 @@ Yunzai/plugins/Yuanshen-Plugin/config/novel.yaml
 | `#酷狗刷新` | 刷新 ck 并返回账号信息 |
 | `#我的酷狗` | 查看等级、今日 / 累计听歌时长等 |
 | `#酷狗帮助` | 查看指令菜单 |
-
----
 
 ---
 
