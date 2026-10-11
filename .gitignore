@@ -1,0 +1,33 @@
+# 依赖
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# 运行时配置（含起点 ck 等敏感信息，不入库）
+config/novel.yaml
+config/*.local.yaml
+
+# 运行时数据 / 缓存
+data/
+tmp/
+temp/
+cache/
+logs/
+*.log
+
+# 下载物与打包产物
+*.zip
+*.tar.gz
+*.7z
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini

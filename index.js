@@ -1,0 +1,11 @@
+import { Novel } from './apps/novel.js';
+import { Kugou } from './apps/kugou.js';
+logger.mark(`===============`);
+logger.mark(`${logger.blue('[Yuanshen-Plugin]')} author Senior Horikawa ！！！`);
+logger.mark(`${logger.blue('[Yuanshen-Plugin]')} version 0.0.1`);
+logger.mark(`${logger.blue(`[Yuanshen-Plugin]`)} repository https://github.com/SeniorHorikawa/Yuanshen-Plugin`);
+logger.mark(`===============`);
+let apps = {};
+apps[Novel.name] = Novel;
+apps[Kugou.name] = Kugou;
+export { apps };

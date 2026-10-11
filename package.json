@@ -1,0 +1,22 @@
+{
+  "name": "yuanshen-plugin",
+  "type": "module",
+  "author": "Senior Horikawa",
+  "scripts": {
+    "lint": "prettier --check **/*.js",
+    "lint:fix": "prettier --write **/*.js",
+    "fix": "prettier --write **/*.js"
+  },
+  "prettier": {
+    "semi": true,
+    "endOfLine": "lf",
+    "useTabs": false,
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "printWidth": 500,
+    "bracketSameLine": true
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
+}
