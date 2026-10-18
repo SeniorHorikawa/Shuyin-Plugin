@@ -21,14 +21,6 @@ function pickFanqieId(url) {
   return p ? p[1] : '';
 }
 
-function rewriteHost(url, apiUrl) {
-  const u = new URL(url);
-  const base = new URL(apiUrl);
-  u.protocol = base.protocol;
-  u.host = base.host;
-  return u.toString();
-}
-
 
 async function resolveFanqieId(startUrl) {
   let url = startUrl;
@@ -367,9 +359,7 @@ export class Novel extends plugin {
       const result = site.summarize(res, target);
       absPath = path.join(CACHE_DIR, safeName(res.file_name || `${result.title || target.book_id}.txt`));
 
-      const newUrl = rewriteHost(res.url, cfg.api_url);
-
-      await fetchToFile(newUrl, absPath, timeout);
+      await fetchToFile(res.url, absPath, timeout);
 
       const sizeMB = (Number(res.file_size) || fs.statSync(absPath).size) / 1024 / 1024;
       const lines = [`《${result.title}》下载完成`, `${site.name} · ${result.done} 章 / ${result.chars} 字${result.note}`, `大小：${sizeMB.toFixed(1)} MB`];
