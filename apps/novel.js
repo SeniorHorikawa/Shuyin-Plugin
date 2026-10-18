@@ -193,6 +193,9 @@ const HELP_REG = '^#?小说(?:帮助|菜单|指令|功能)$';
 const URL_REG = 'https?://[^\\s]*(?:qidian|wtzw|changdunovel|fanqienovel|fqnovel)\\.com[^\\s]*';
 const CMD_REG = '^#?(?:起点|七猫|番茄)下载\\s*\\d{5,20}$';
 
+const searchCache = new Map();
+const downloadLocks = new Set();
+
 const SEARCH_USAGE = '用法：#搜小说 关键词（或 #搜番茄 / #搜七猫 关键词）';
 const DOWNLOAD_USAGE = ['用法：#小说下载 序号 [章节数]', '或：#小说下载 番茄:书籍ID [章节数] / #小说下载 七猫:书籍ID / #小说下载 起点:书籍ID', '也可直接发起点/七猫/番茄分享链接'].join('\n');
 
@@ -211,8 +214,6 @@ export class Novel extends plugin {
         { reg: CMD_REG, fnc: 'downloadBook' },
       ],
     });
-    this.searchCache = new Map();
-    this.locks = new Set();
   }
 
   async search(e) {
@@ -242,7 +243,7 @@ export class Novel extends plugin {
       return true;
     }
 
-    this.searchCache.set(String(e.user_id), { time: Date.now(), keyword, list });
+    searchCache.set(String(e.user_id), { time: Date.now(), keyword, list });
 
     const text = `「${keyword}」搜索结果（${list.length}条）\n` + list.map((b, i) => this.formatBook(b, i + 1)).join('\n\n') + `\n\n回复 #小说下载 序号 下载（${loadConfig().cache_minutes}分钟内有效）`;
     await this.replyRich(e, text);
@@ -347,7 +348,7 @@ export class Novel extends plugin {
     }
 
     const userId = String(e.user_id);
-    if (this.locks.has(userId)) {
+    if (downloadLocks.has(userId)) {
       await e.reply('你已有下载任务在进行中，请等它完成…', true);
       return;
     }
@@ -357,7 +358,7 @@ export class Novel extends plugin {
     }
     const limit = site.limitable ? target.limit || cfg.max_chapters : 0;
 
-    this.locks.add(userId);
+    downloadLocks.add(userId);
     let absPath = '';
     try {
       const picked = target.index ? `搜索结果第 ${target.index} 条${target.keyword ? `（${target.keyword}）` : ''}` : '';
@@ -388,7 +389,7 @@ export class Novel extends plugin {
       await e.reply('下载失败，请稍后再试', true);
     } finally {
       if (absPath) await fs.promises.rm(absPath, { force: true }).catch(() => {});
-      this.locks.delete(userId);
+      downloadLocks.delete(userId);
     }
   }
 
@@ -408,10 +409,10 @@ export class Novel extends plugin {
 
   getCache(userId) {
     const key = String(userId);
-    const cache = this.searchCache.get(key);
+    const cache = searchCache.get(key);
     if (!cache) return null;
     if (Date.now() - cache.time > loadConfig().cache_minutes * 60 * 1000) {
-      this.searchCache.delete(key);
+      searchCache.delete(key);
       return null;
     }
     return cache;
