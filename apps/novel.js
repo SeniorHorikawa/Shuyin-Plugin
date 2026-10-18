@@ -10,6 +10,7 @@ const CACHE_DIR = path.join(os.tmpdir(), 'novel_cache');
 const SEARCH_TIMEOUT_MS = 60 * 1000;
 const REDIRECT_TIMEOUT_MS = 15 * 1000;
 const REDIRECT_MAX_HOPS = 6;
+const INDEX_LIMIT = 100;
 
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
 
@@ -241,7 +242,7 @@ export class Novel extends plugin {
       return true;
     }
 
-    this.searchCache.set(String(e.user_id), { time: Date.now(), list });
+    this.searchCache.set(String(e.user_id), { time: Date.now(), keyword, list });
 
     const text = `「${keyword}」搜索结果（${list.length}条）\n` + list.map((b, i) => this.formatBook(b, i + 1)).join('\n\n') + `\n\n回复 #小说下载 序号 下载（${loadConfig().cache_minutes}分钟内有效）`;
     await this.replyRich(e, text);
@@ -279,10 +280,20 @@ export class Novel extends plugin {
   async download(e) {
     const m = e.msg.match(DOWNLOAD_REG);
     const target = this.parseDownloadArg(m?.[1] || '', String(e.user_id));
+
+    if (target.error === 'no-cache') {
+      await e.reply(['没有找到你的搜索结果（可能已过期）', '请先 #搜小说 关键词，再用 #小说下载 序号', '或直接 #小说下载 番茄:书号 / 七猫:书号 / 起点:书号'].join('\n'), true);
+      return true;
+    }
+    if (target.error === 'out-of-range') {
+      await e.reply(`序号超出范围，当前搜索结果只有 ${target.total} 条`, true);
+      return true;
+    }
     if (target.error) {
       await e.reply(DOWNLOAD_USAGE, true);
       return true;
     }
+
     await this.startDownload(e, target);
     return true;
   }
@@ -303,10 +314,13 @@ export class Novel extends plugin {
 
     if (!/^\d+$/.test(ref)) return { error: 'usage' };
 
-    const cached = this.getCache(userId);
-    if (cached && Number(ref) >= 1 && Number(ref) <= cached.list.length) {
-      const hit = cached.list[Number(ref) - 1];
-      return { source: hit.source, book_id: hit.book_id, title: hit.title, limit };
+    const index = Number(ref);
+    if (index <= INDEX_LIMIT) {
+      const cached = this.getCache(userId);
+      if (!cached) return { error: 'no-cache' };
+      if (index < 1 || index > cached.list.length) return { error: 'out-of-range', total: cached.list.length };
+      const hit = cached.list[index - 1];
+      return { source: hit.source, book_id: hit.book_id, title: hit.title, limit, index, keyword: cached.keyword };
     }
 
     return { source: ref.length >= 8 ? 'fanqie' : 'qimao', book_id: ref, limit, guessed: true };
@@ -346,7 +360,8 @@ export class Novel extends plugin {
     this.locks.add(userId);
     let absPath = '';
     try {
-      await e.reply([`正在下载《${target.title || target.book_id}》（${site.name}）`, limit ? `限量前 ${limit} 章` : '整书全本下载', '大部头可能需要几分钟，请耐心等待…'].join('\n'), true);
+      const picked = target.index ? `搜索结果第 ${target.index} 条${target.keyword ? `（${target.keyword}）` : ''}` : '';
+      await e.reply([`正在下载《${target.title || target.book_id}》（${site.name}）`, picked, limit ? `限量前 ${limit} 章` : '整书全本下载', '大部头可能需要几分钟，请耐心等待…'].filter(Boolean).join('\n'), true);
 
       const params = { book_id: target.book_id };
       if (site.ck) params.ck = cfg.QIDIAN_CK;
@@ -414,7 +429,7 @@ export class Novel extends plugin {
   }
 
   async help(e) {
-    await e.reply(['【小说搜索下载】', '#搜小说 关键词 —— 同时搜索番茄/七猫', '#搜番茄 关键词 / #搜七猫 关键词', '#小说下载 序号 [章节数] —— 下载搜索结果（限量仅番茄支持）', '#小说下载 番茄:书号 [章节数] / #小说下载 七猫:书号 / #小说下载 起点:书号', '#起点下载 书号 / #七猫下载 书号 / #番茄下载 书号', '直接发起点/七猫/番茄分享链接也可下载整本', '', '整书以文件形式发送；没有搜索结果缓存时，纯数字书号按长度识别来源（≥8位算番茄）'].join('\n'), true);
+    await e.reply(['【小说搜索下载】', '#搜小说 关键词 —— 同时搜索番茄/七猫', '#搜番茄 关键词 / #搜七猫 关键词', `#小说下载 序号 [章节数] —— 1~${INDEX_LIMIT} 视为搜索结果序号（限量仅番茄支持）`, '#小说下载 番茄:书号 [章节数] / #小说下载 七猫:书号 / #小说下载 起点:书号', '#起点下载 书号 / #七猫下载 书号 / #番茄下载 书号', '直接发起点/七猫/番茄分享链接也可下载整本', '', '序号需先搜索（缓存默认 15 分钟）；超过 100 的数字按书号处理（≥8 位算番茄）'].join('\n'), true);
     return true;
   }
 }
