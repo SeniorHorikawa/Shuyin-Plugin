@@ -357,7 +357,7 @@ export class Kugou extends plugin {
 
     try {
       const image = await render(e, PROFILE_TPL, params, { retType: 'base64' });
-      await e.reply(segment.image(image), true);
+      await e.reply(Buffer.isBuffer(image) ? segment.image(image) : image, true);
       return true;
     } catch (err) {
       logger.warn(`[${TAG}] 资料图片渲染失败，回退文本：${err.message}`);
