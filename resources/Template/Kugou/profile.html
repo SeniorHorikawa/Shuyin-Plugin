@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/Kugou/profile.css">
+</head>
+<body>
+    <div class="page">
+        <div class="card">
+            <div class="edge"></div>
+
+            <div class="hero">
+                <div class="ring-wrap">
+                    <svg class="ring" viewBox="0 0 132 132">
+                        <defs>
+                            <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#23b0ff" />
+                                <stop offset="55%" stop-color="#5ce1e6" />
+                                <stop offset="100%" stop-color="#8b5cff" />
+                            </linearGradient>
+                        </defs>
+                        <circle class="ring-bg" cx="66" cy="66" r="61"></circle>
+                        <circle class="ring-fg" cx="66" cy="66" r="61" stroke-dasharray="{{ringDash}}" transform="rotate(-90 66 66)"></circle>
+                    </svg>
+                    <div class="avatar-slot">
+                        {{if avatar}}
+                        <img class="avatar" src="{{avatar}}" onerror="this.style.display='none'">
+                        {{else}}
+                        <div class="avatar avatar-empty">{{initial}}</div>
+                        {{/if}}
+                    </div>
+                    <div class="lv-tag">Lv.{{level}}</div>
+                </div>
+
+                <div class="who">
+                    <div class="name-line">
+                        <h1>{{nickname}}</h1>
+                        {{if gender}}<span class="tag">{{gender}}</span>{{/if}}
+                        {{if running}}<span class="tag tag-live">刷歌中</span>{{/if}}
+                    </div>
+                    <div class="sign">{{signature}}</div>
+                    <div class="meta">
+                        <span>ID {{userid}}</span>
+                        <i></i>
+                        <span>{{region}}</span>
+                        <i></i>
+                        <span>{{regDate}} 加入</span>
+                    </div>
+                </div>
+
+                <div class="rank">
+                    <b>{{friendRank}}</b>
+                    <span>好友榜</span>
+                </div>
+            </div>
+
+            <div class="kpis">
+                <div class="kpi"><b>{{follows}}</b><span>关注</span></div>
+                <div class="kpi"><b>{{fans}}</b><span>粉丝</span></div>
+                <div class="kpi"><b>{{friends}}</b><span>好友</span></div>
+                <div class="kpi"><b>{{visitors}}</b><span>访客</span></div>
+            </div>
+
+            <div class="sec"><em></em>听歌数据<span class="sec-note">Lv.{{level}} → Lv.{{nextGrade}} · 还差 {{pointGap}} 分</span></div>
+            <div class="blocks">
+                <div class="blk"><b>{{todayHours}}</b><span>今日小时</span></div>
+                <div class="blk"><b>{{totalHours}}</b><span>累计小时</span></div>
+                <div class="blk"><b>{{listenDays}}</b><span>连续天数</span></div>
+                <div class="blk"><b>{{joinDays}}</b><span>加入天数</span></div>            </div>
+            <div class="prog">
+                <div class="prog-bar"><div class="prog-fill" style="width:{{percent}}%"></div></div>
+                <div class="prog-text">{{currentPoint}} / {{nextGradePoint}} 积分</div>
+            </div>
+
+            <div class="sec"><em></em>今日收听分布<span class="sec-note">{{todayText}} · 峰值 {{peakText}} · 单位 小时</span></div>
+            <div class="chart">
+                <div class="chart-main">
+                    <div class="y-axis">
+                        {{each axis item}}
+                        <span style="top:{{item.pos}}%">{{item.label}}</span>
+                        {{/each}}
+                    </div>
+                    <div class="plot">
+                        <div class="grid">
+                            {{each axis item}}<i style="top:{{item.pos}}%"></i>{{/each}}
+                        </div>
+                        <div class="cols">
+                            {{each clocks item}}
+                            <div class="col{{if item.on}} on{{/if}}">
+                                <div class="bar" style="height:{{item.h}}%">
+                                    {{if item.vText}}<span class="v">{{item.vText}}</span>{{/if}}
+                                </div>
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                </div>
+                <div class="x-axis">
+                    {{each clocks item}}<i>{{item.label}}</i>{{/each}}
+                </div>
+            </div>
+
+            <div class="split">
+                <div class="pane pane-song">
+                    <div class="sec"><em></em>今日最常听</div>
+                    {{each songs item}}
+                    <div class="song">
+                        <span class="idx">{{item.idx}}</span>
+                        <div class="cover">
+                            {{if item.cover}}<img src="{{item.cover}}" onerror="this.style.display='none'">{{/if}}
+                        </div>
+                        <div class="song-text">
+                            <b>{{item.name}}</b>
+                            <span>{{item.singer}}</span>
+                        </div>
+                    </div>
+                    {{/each}}
+                    {{if songEmpty}}
+                    <div class="empty">今日还没有收听记录</div>
+                    {{/if}}
+                </div>
+                <div class="pane pane-medal">
+                    <div class="sec"><em></em>勋章墙<span class="sec-note">{{medalCount}} 枚</span></div>
+                    <div class="medals">
+                        {{each medals item}}
+                        <div class="medal">
+                            <div class="medal-img">
+                                {{if item.img}}<img src="{{item.img}}" onerror="this.style.display='none'">{{/if}}
+                            </div>
+                            <span>{{item.name}}</span>
+                            <em>Lv.{{item.level}}</em>
+                        </div>
+                        {{/each}}
+                        {{if medalExtra}}
+                        <div class="medal medal-more">
+                            <div class="medal-img"><b>+{{medalExtra}}</b></div>
+                            <span>更多勋章</span>
+                            <em>共 {{medalCount}} 枚</em>
+                        </div>
+                        {{/if}}
+                    </div>
+                    {{if medalEmpty}}
+                    <div class="empty">暂未获得勋章</div>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{if cards.length}}
+            <div class="sec"><em></em>本周收听战绩<span class="sec-note">{{cardCount}} 张</span></div>
+            <div class="card-row">
+                {{each cards item}}
+                <div class="mcard">
+                    <div class="mc-img">
+                        {{if item.image}}<img src="{{item.image}}" onerror="this.style.display='none'">{{/if}}
+                        <span class="mc-tag">{{item.styleText}}</span>
+                    </div>
+                    <div class="mc-title">{{item.title}}</div>
+                    <div class="mc-sub">{{item.sub}}</div>
+                    <div class="mc-val">{{item.content}}</div>
+                </div>
+                {{/each}}
+            </div>
+            {{/if}}
+
+            <div class="foot">
+                <span>{{username}}</span>
+                <span class="dot"></span>
+                <span>收藏 {{favCount}} · 作品 {{songCount}}</span>
+                <span class="dot"></span>
+                <span>{{queryTime}}</span>
+            </div>
+            {{if warnText}}<div class="warn">{{warnText}}</div>{{/if}}
+        </div>
+    </div>
+</body>
+</html>

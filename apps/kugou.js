@@ -3,10 +3,17 @@ import plugin from '../../../lib/plugins/plugin.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { post } from '../model/api.js';
+import { render } from '../model/render.js';
 import { DATA_DIR, secondsText, sleep } from '../model/utils.js';
 
 const TAG = '酷狗刷歌';
 const STORE_DIR = `${DATA_DIR}/kugou`;
+const PROFILE_TPL = 'Template/Kugou/profile';
+const CARD_STYLE = ['TOP100', 'TOP10', 'NO.1'];
+const RING_RADIUS = 61;
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
+const Y_SEGMENTS = 5;
+const MEDAL_LIMIT = 4;
 const REQUEST_TIMEOUT_MS = 30_000;
 const POLL_MS = 10_000;
 const LOGIN_TIMEOUT_MS = 5 * 60_000;
@@ -42,6 +49,131 @@ const store = {
     fs.writeFileSync(store.file(userId), JSON.stringify(account, null, 2));
   },
 };
+
+const picUrl = (url, size = 240) => String(url || '').replace('{size}', String(size));
+
+const hoursText = (seconds) => {
+  const value = Math.max(0, Number(seconds) || 0) / 3600;
+  if (!value) return '0';
+  return value >= 10_000 ? String(Math.round(value)) : value.toFixed(1).replace(/\.0$/, '');
+};
+
+/**
+ * 轴顶值：按量级向上取整并保证能均分成 segments 段
+ * 5585 → 5600，76.8 → 80
+ */
+function niceTop(value, segments = Y_SEGMENTS) {
+  if (!(value > 0)) return segments;
+  const magnitude = 10 ** Math.max(0, Math.floor(Math.log10(value)) - 1);
+  const padded = Math.ceil(value / magnitude) * magnitude;
+  return Math.ceil(padded / segments) * segments;
+}
+
+function buildProfileParams(info, account, running) {
+  const profile = info.profile || {};
+  const homepage = info.homepage || {};
+  const listen = info.listen || {};
+  const detail = listen.detail || {};
+  const warnings = info.warnings || [];
+
+  const level = Number(listen.level) || 0;
+  const nextGrade = Number(listen.nextGrade) || level + 1;
+  const currentPoint = Number(listen.currentPoint) || 0;
+  const nextGradePoint = Number(listen.nextGradePoint) || 0;
+  const percent = nextGradePoint > 0 ? Math.min(100, (currentPoint / nextGradePoint) * 100) : 0;
+
+  const nickname = profile.nickname || account?.nickname || '酷狗用户';
+  const clocks = Array.isArray(detail.clocks) ? detail.clocks : [];
+  const clockHours = clocks.map((item) => (Number(item.listen_duration) || 0) / 3600);
+  const axisTop = niceTop(Math.max(0, ...clockHours), Y_SEGMENTS);
+  const peak = clocks.reduce((best, item) => ((Number(item.listen_duration) || 0) > (Number(best.listen_duration) || 0) ? item : best), clocks[0] || { clock: 0 });
+
+  const songs = (detail.rank_song || []).slice(0, 3).map((song, index) => ({
+    idx: index + 1,
+    name: song.name || '-',
+    singer: song.singer_name || '',
+    cover: picUrl(song.cover, 180),
+  }));
+
+  const medalAll = ((info.medals || {}).list?.list || []).map((medal) => ({
+    name: medal.name || '',
+    level: medal.level || '1',
+    img: (medal.data_source || []).find((item) => item.content_type === 'image')?.content || '',
+  }));
+  const medals = medalAll.slice(0, medalAll.length > MEDAL_LIMIT ? MEDAL_LIMIT - 1 : MEDAL_LIMIT);
+  const medalExtra = Math.max(0, medalAll.length - medals.length);
+
+  const cards = ((info.musicCards || {}).cards || []).map((card) => ({
+    image: picUrl(card.image, 240),
+    title: card.title || '',
+    sub: card.sub_title || '',
+    content: card.content || '',
+    styleText: CARD_STYLE[Number(card.style) || 0] || '',
+  }));
+
+  const rank = Number(detail.friend_rank?.rank) || 0;
+  const regAt = new Date(String(profile.reg_time || '').replace(/-/g, '/')).getTime();
+  const joinDays = Number.isNaN(regAt) ? 0 : Math.max(0, Math.floor((Date.now() - regAt) / 86_400_000));
+
+  return {
+    nickname,
+    initial: nickname.slice(0, 1),
+    avatar: profile.pic || profile.avatar || homepage.pic || '',
+    signature: profile.signature || homepage.descri || '这个人很懒，什么都没写',
+    gender: Number(profile.sex) === 1 ? '男' : Number(profile.sex) === 2 ? '女' : '',
+    region: [profile.province, profile.city].filter(Boolean).join(' · ') || '未知地区',
+    regDate: String(profile.reg_time || '').slice(0, 10) || '-',
+    userid: profile.userid ?? info.userid ?? account?.userid ?? '-',
+    username: profile.username || '',
+    running,
+    ringDash: `${((percent / 100) * RING_LENGTH).toFixed(1)} ${RING_LENGTH.toFixed(1)}`,
+    percent: percent.toFixed(1),
+    level,
+    nextGrade,
+    currentPoint,
+    nextGradePoint,
+    pointGap: Math.max(0, nextGradePoint - currentPoint),
+    follows: homepage.follows ?? 0,
+    fans: homepage.fans ?? 0,
+    friends: homepage.friends ?? 0,
+    visitors: homepage.visitors ?? 0,
+    friendRank: rank ? `No.${rank}` : '-',
+    joinDays,
+    todayHours: hoursText(listen.todaySeconds),
+    totalHours: hoursText(listen.totalSeconds),
+    listenDays: detail.accumulate_listen_days ?? 0,
+    todayText: `今日 ${hoursText(listen.todaySeconds)} 小时`,
+    peakText: `${peak.clock ?? 0}:00`,
+    axis: Array.from({ length: Y_SEGMENTS + 1 }, (_, index) => {
+      const value = (axisTop * (Y_SEGMENTS - index)) / Y_SEGMENTS;
+      return {
+        pos: (index * 100) / Y_SEGMENTS,
+        label: Number.isInteger(value) ? String(value) : value.toFixed(1),
+      };
+    }),
+    clocks: clocks.map((item, index) => {
+      const seconds = Number(item.listen_duration) || 0;
+      return {
+        label: index % 2 === 0 ? String(item.clock ?? index) : '',
+        vText: seconds ? hoursText(seconds) : '',
+        h: seconds ? Math.round((clockHours[index] / axisTop) * 1000) / 10 : 0,
+        on: seconds > 0,
+      };
+    }),
+    songs,
+    songEmpty: songs.length === 0,
+    medals,
+    medalEmpty: medals.length === 0,
+    medalCount: medalAll.length,
+    medalExtra,
+    cards,
+    cardCount: cards.length,
+    favCount: info.favorites?.count ?? 0,
+    songCount: info.songs?.total ?? 0,
+    queryTime: listen.serverTime || profile.servertime || '',
+    warnText: warnings.length ? '部分信息获取失败，已跳过缺失项' : '',
+  };
+}
 
 export class Kugou extends plugin {
   constructor() {
@@ -218,6 +350,22 @@ export class Kugou extends plugin {
       return true;
     }
 
+    const running = Boolean(this.tasks.get(userId));
+    const params = buildProfileParams(info, account, running);
+
+    try {
+      const image = await render(e, PROFILE_TPL, params, { retType: 'base64' });
+      await e.reply(segment.image(image), true);
+      return true;
+    } catch (err) {
+      logger.warn(`[${TAG}] 资料图片渲染失败，回退文本：${err.message}`);
+    }
+
+    await e.reply(this.profileText(info, account, userId, running), true);
+    return true;
+  }
+
+  profileText(info, account, userId, running) {
     const { profile = {}, listen = {}, warnings } = info;
     const region = [profile.province, profile.city].filter(Boolean).join(' ');
     const lines = ['【我的酷狗】', `昵称：${profile.nickname || account.nickname || '-'}`, `账号：${profile.userid ?? info.userid ?? account.userid ?? '-'}`];
@@ -230,21 +378,13 @@ export class Kugou extends plugin {
     if (region) lines.push(`地区：${region}`);
     if (profile.reg_time) lines.push(`注册时间：${profile.reg_time}`);
     if (profile.signature) lines.push(`签名：${profile.signature}`);
-    if (this.tasks.get(userId)) lines.push('刷歌任务：运行中');
+    if (running) lines.push('刷歌任务：运行中');
     if (listen.serverTime) lines.push(`查询时间：${listen.serverTime}`);
     if (warnings?.length) {
       logger.warn(`[${TAG}] ${userId} 资料查询警告：${warnings.join('；')}`);
       lines.push('提示：部分信息获取失败');
     }
-    const text = lines.join('\n');
-
-    const avatar = profile.pic || profile.avatar;
-    try {
-      await e.reply(avatar ? [segment.image(avatar), text] : text, true);
-    } catch {
-      await e.reply(text, true);
-    }
-    return true;
+    return lines.join('\n');
   }
 
   async pollLogin(userId, e, key) {
