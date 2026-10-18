@@ -58,6 +58,8 @@ const hoursText = (seconds) => {
   return value >= 10_000 ? String(Math.round(value)) : value.toFixed(1).replace(/\.0$/, '');
 };
 
+const minutesText = (seconds) => String(Math.round(Math.max(0, Number(seconds) || 0) / 60));
+
 /**
  * 轴顶值：按量级向上取整并保证能均分成 segments 段
  * 5585 → 5600，76.8 → 80
@@ -84,8 +86,8 @@ function buildProfileParams(info, account, running) {
 
   const nickname = profile.nickname || account?.nickname || '酷狗用户';
   const clocks = Array.isArray(detail.clocks) ? detail.clocks : [];
-  const clockHours = clocks.map((item) => (Number(item.listen_duration) || 0) / 3600);
-  const axisTop = niceTop(Math.max(0, ...clockHours), Y_SEGMENTS);
+  const clockMinutes = clocks.map((item) => (Number(item.listen_duration) || 0) / 60);
+  const axisTop = niceTop(Math.max(0, ...clockMinutes), Y_SEGMENTS);
   const peak = clocks.reduce((best, item) => ((Number(item.listen_duration) || 0) > (Number(best.listen_duration) || 0) ? item : best), clocks[0] || { clock: 0 });
 
   const songs = (detail.rank_song || []).slice(0, 3).map((song, index) => ({
@@ -142,7 +144,7 @@ function buildProfileParams(info, account, running) {
     todayHours: hoursText(listen.todaySeconds),
     totalHours: hoursText(listen.totalSeconds),
     listenDays: detail.accumulate_listen_days ?? 0,
-    todayText: `今日 ${hoursText(listen.todaySeconds)} 小时`,
+    todayText: `今日 ${minutesText(listen.todaySeconds)} 分钟`,
     peakText: `${peak.clock ?? 0}:00`,
     axis: Array.from({ length: Y_SEGMENTS + 1 }, (_, index) => {
       const value = (axisTop * (Y_SEGMENTS - index)) / Y_SEGMENTS;
@@ -155,8 +157,8 @@ function buildProfileParams(info, account, running) {
       const seconds = Number(item.listen_duration) || 0;
       return {
         label: index % 2 === 0 ? String(item.clock ?? index) : '',
-        vText: seconds ? hoursText(seconds) : '',
-        h: seconds ? Math.round((clockHours[index] / axisTop) * 1000) / 10 : 0,
+        vText: seconds ? minutesText(seconds) : '',
+        h: seconds ? Math.round((clockMinutes[index] / axisTop) * 1000) / 10 : 0,
         on: seconds > 0,
       };
     }),
