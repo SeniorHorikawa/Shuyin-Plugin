@@ -447,16 +447,17 @@ export class Novel extends plugin {
       const res = await post(site.download, params, timeout);
       if (!res.url) throw new Error('响应里没有 url');
 
+      // 拿到下载地址就先回消息，再去落盘，避免用户干等
       const result = site.summarize(res, target);
+      const remoteSizeMB = (Number(res.file_size) || 0) / 1024 / 1024;
+      const notice = [`《${result.title}》已拿到下载地址`, `${site.name} · ${result.done} 章 / ${result.chars} 字${result.note}`];
+      if (remoteSizeMB) notice.push(`大小：${remoteSizeMB.toFixed(1)} MB`);
+      if (remoteSizeMB > cfg.size_warn_mb) notice.push('⚠ 文件较大，发送可能较慢');
+      notice.push('正在保存到本地并发送…');
+      await e.reply(notice.join('\n'), true);
+
       absPath = path.join(CACHE_DIR, safeName(res.file_name || `${result.title || target.book_id}.txt`));
-
       await fetchToFile(res.url, absPath, timeout);
-
-      const sizeMB = (Number(res.file_size) || fs.statSync(absPath).size) / 1024 / 1024;
-      const lines = [`《${result.title}》下载完成`, `${site.name} · ${result.done} 章 / ${result.chars} 字${result.note}`, `大小：${sizeMB.toFixed(1)} MB`];
-      if (sizeMB > cfg.size_warn_mb) lines.push('⚠ 文件较大，发送可能较慢');
-      lines.push('正在发送文件…');
-      await e.reply(lines.join('\n'), true);
 
       await this.sendFile(e, absPath);
     } catch (err) {
