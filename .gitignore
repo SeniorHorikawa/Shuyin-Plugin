@@ -27,6 +27,9 @@ logs/
 *.swp
 *.swo
 
+# 本地助手工作区（笔记/记忆，不入库）
+.workbuddy/
+
 # 系统
 .DS_Store
 Thumbs.db

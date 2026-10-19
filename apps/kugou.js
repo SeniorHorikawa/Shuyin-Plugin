@@ -3,7 +3,7 @@ import plugin from '../../../lib/plugins/plugin.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { post } from '../model/api.js';
-import { render } from '../model/render.js';
+import { imageSegment, render } from '../model/render.js';
 import { DATA_DIR, secondsText, sleep } from '../model/utils.js';
 
 const TAG = '酷狗刷歌';
@@ -14,6 +14,8 @@ const RING_RADIUS = 61;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 const Y_SEGMENTS = 5;
 const MEDAL_LIMIT = 4;
+const SONG_LIMIT = 5;
+const CARD_LIMIT = 30;
 const REQUEST_TIMEOUT_MS = 30_000;
 const POLL_MS = 10_000;
 const LOGIN_TIMEOUT_MS = 5 * 60_000;
@@ -60,6 +62,30 @@ const hoursText = (seconds) => {
 
 const minutesText = (seconds) => String(Math.round(Math.max(0, Number(seconds) || 0) / 60));
 
+/** 播放次数：酷狗目前不下发该字段，后端补了就自动显示 */
+const PLAY_COUNT_KEYS = ['play_count', 'playcount', 'play_times', 'listen_count', 'count', 'times'];
+
+function playCountText(song) {
+  for (const key of PLAY_COUNT_KEYS) {
+    const value = Number(song?.[key]);
+    if (Number.isFinite(value) && value > 0) return `${value} 次`;
+  }
+  return '';
+}
+
+/** period 形如 2026.10.19，排序用 YYYYMMDD，展示用 MM.DD */
+const PERIOD_RE = /^(\d{4})\D+(\d{1,2})\D+(\d{1,2})/;
+
+function periodValue(text) {
+  const m = String(text || '').match(PERIOD_RE);
+  return m ? Number(`${m[1]}${m[2].padStart(2, '0')}${m[3].padStart(2, '0')}`) : 0;
+}
+
+function periodText(text) {
+  const m = String(text || '').match(PERIOD_RE);
+  return m ? `${m[2].padStart(2, '0')}.${m[3].padStart(2, '0')}` : String(text || '');
+}
+
 /**
  * 轴顶值：按量级向上取整并保证能均分成 segments 段
  * 5585 → 5600，76.8 → 80
@@ -90,11 +116,12 @@ function buildProfileParams(info, account, running) {
   const axisTop = niceTop(Math.max(0, ...clockMinutes), Y_SEGMENTS);
   const peak = clocks.reduce((best, item) => ((Number(item.listen_duration) || 0) > (Number(best.listen_duration) || 0) ? item : best), clocks[0] || { clock: 0 });
 
-  const songs = (detail.rank_song || []).slice(0, 3).map((song, index) => ({
+  const songs = (detail.rank_song || []).slice(0, SONG_LIMIT).map((song, index) => ({
     idx: index + 1,
     name: song.name || '-',
     singer: song.singer_name || '',
     cover: picUrl(song.cover, 180),
+    countText: playCountText(song),
   }));
 
   const medalAll = ((info.medals || {}).list?.list || []).map((medal) => ({
@@ -105,13 +132,23 @@ function buildProfileParams(info, account, running) {
   const medals = medalAll.slice(0, medalAll.length > MEDAL_LIMIT ? MEDAL_LIMIT - 1 : MEDAL_LIMIT);
   const medalExtra = Math.max(0, medalAll.length - medals.length);
 
-  const cards = ((info.musicCards || {}).cards || []).map((card) => ({
-    image: picUrl(card.image, 240),
-    title: card.title || '',
-    sub: card.sub_title || '',
-    content: card.content || '',
-    styleText: CARD_STYLE[Number(card.style) || 0] || '',
-  }));
+  const cards = ((info.musicCards || {}).cards || [])
+    .filter((card) => !Number(card.hide))
+    .map((card, index) => ({
+      index,
+      image: picUrl(card.image, 240),
+      title: card.title || '',
+      sub: card.sub_title || '',
+      content: card.content || '',
+      contentTitle: card.content_title || '',
+      period: card.period || '',
+      periodText: periodText(card.period),
+      periodValue: periodValue(card.period),
+      styleText: CARD_STYLE[Number(card.style) || 0] || '',
+    }))
+    .sort((a, b) => b.periodValue - a.periodValue || a.index - b.index)
+    .slice(0, CARD_LIMIT)
+    .map(({ index, periodValue: _value, ...rest }) => rest);
 
   const rank = Number(detail.friend_rank?.rank) || 0;
   const regAt = new Date(String(profile.reg_time || '').replace(/-/g, '/')).getTime();
@@ -357,7 +394,7 @@ export class Kugou extends plugin {
 
     try {
       const image = await render(e, PROFILE_TPL, params, { retType: 'base64' });
-      await e.reply(Buffer.isBuffer(image) ? segment.image(image) : image, true);
+      await e.reply(imageSegment(image), true);
       return true;
     } catch (err) {
       logger.warn(`[${TAG}] 资料图片渲染失败，回退文本：${err.message}`);

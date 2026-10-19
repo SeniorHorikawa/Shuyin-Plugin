@@ -6,17 +6,15 @@
 </head>
 <body>
     <div class="page">
-        <div class="card">
-            <div class="edge"></div>
-
+        <div class="sheet">
             <div class="hero">
                 <div class="ring-wrap">
                     <svg class="ring" viewBox="0 0 132 132">
                         <defs>
                             <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                                <stop offset="0%" stop-color="#23b0ff" />
-                                <stop offset="55%" stop-color="#5ce1e6" />
-                                <stop offset="100%" stop-color="#8b5cff" />
+                                <stop offset="0%" stop-color="#90caf9" />
+                                <stop offset="55%" stop-color="#42a5f5" />
+                                <stop offset="100%" stop-color="#1e88e5" />
                             </linearGradient>
                         </defs>
                         <circle class="ring-bg" cx="66" cy="66" r="61"></circle>
@@ -66,7 +64,8 @@
                 <div class="blk"><b>{{todayHours}}</b><span>今日小时</span></div>
                 <div class="blk"><b>{{totalHours}}</b><span>累计小时</span></div>
                 <div class="blk"><b>{{listenDays}}</b><span>连续天数</span></div>
-                <div class="blk"><b>{{joinDays}}</b><span>注册天数</span></div>            </div>
+                <div class="blk"><b>{{joinDays}}</b><span>注册天数</span></div>
+            </div>
             <div class="prog">
                 <div class="prog-bar"><div class="prog-fill" style="width:{{percent}}%"></div></div>
                 <div class="prog-text">{{currentPoint}} / {{nextGradePoint}} 积分</div>
@@ -113,6 +112,7 @@
                             <b>{{item.name}}</b>
                             <span>{{item.singer}}</span>
                         </div>
+                        {{if item.countText}}<span class="cnt">{{item.countText}}</span>{{/if}}
                     </div>
                     {{/each}}
                     {{if songEmpty}}
@@ -146,17 +146,22 @@
             </div>
 
             {{if cards.length}}
-            <div class="sec"><em></em>本周收听战绩<span class="sec-note">{{cardCount}} 张</span></div>
-            <div class="card-row">
+            <div class="sec"><em></em>收听战绩<span class="sec-note">最近 {{cardCount}} 张</span></div>
+            <div class="mc-grid">
                 {{each cards item}}
                 <div class="mcard">
                     <div class="mc-img">
                         {{if item.image}}<img src="{{item.image}}" onerror="this.style.display='none'">{{/if}}
-                        <span class="mc-tag">{{item.styleText}}</span>
+                        {{if item.styleText}}<span class="mc-tag{{if item.styleText == 'NO.1'}} mc-tag-gold{{/if}}{{if item.styleText == 'TOP10'}} mc-tag-blue{{/if}}">{{item.styleText}}</span>{{/if}}
                     </div>
-                    <div class="mc-title">{{item.title}}</div>
-                    <div class="mc-sub">{{item.sub}}</div>
-                    <div class="mc-val">{{item.content}}</div>
+                    <div class="mc-body">
+                        <div class="mc-title">{{item.title}}</div>
+                        <div class="mc-sub">{{item.sub}}</div>
+                        <div class="mc-foot">
+                            {{if item.content}}<span class="mc-val">{{item.content}}</span>{{/if}}
+                            {{if item.periodText}}<span class="mc-date">{{item.periodText}}</span>{{/if}}
+                        </div>
+                    </div>
                 </div>
                 {{/each}}
             </div>

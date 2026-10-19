@@ -44,4 +44,11 @@ async function render(e, tpl, params = {}, cfg = {}) {
   });
 }
 
-export { render, pluginName, pluginResources };
+/** runtime.render / puppeteer 的返回值可能是 Buffer、裸 base64，或已经是消息段 */
+function imageSegment(value) {
+  if (Buffer.isBuffer(value)) return segment.image(value);
+  if (typeof value === 'string' && !/^(https?:|file:|base64:\/\/)/.test(value)) return segment.image(`base64://${value}`);
+  return value;
+}
+
+export { render, imageSegment, pluginName, pluginResources };
