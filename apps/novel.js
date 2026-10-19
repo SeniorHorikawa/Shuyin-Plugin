@@ -4,9 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { post } from '../model/api.js';
 import { loadConfig } from '../model/config.js';
+import { imageSegment, render } from '../model/render.js';
 import { fetchToFile, pickUrl, safeName } from '../model/utils.js';
 
 const CACHE_DIR = path.join(os.tmpdir(), 'novel_cache');
+const SEARCH_TPL = 'Template/Novel/search';
 const SEARCH_TIMEOUT_MS = 60 * 1000;
 const REDIRECT_TIMEOUT_MS = 15 * 1000;
 const REDIRECT_MAX_HOPS = 6;
@@ -187,6 +189,82 @@ function detectSite(msg) {
   return '';
 }
 
+/** 字数：3687843 → 369万字 */
+function wordText(count) {
+  const value = Number(count) || 0;
+  if (value <= 0) return '';
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1).replace(/\.0$/, '')}亿字`;
+  if (value >= 10_000) return `${Math.round(value / 10_000)}万字`;
+  return `${value}字`;
+}
+
+/** 番茄/七猫两种返回结构 → 统一书籍模型 */
+function normalizeBook(source, book) {
+  const intro = String(book.abstract || book.intro || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return {
+    source,
+    book_id: String(book.book_id),
+    title: book.title || '未知书名',
+    author: book.author || '未知',
+    chapter_count: Number(book.chapter_count) || 0,
+    words: Number(book.word_count) || 0,
+    score: book.score || '',
+    status: book.status || (book.is_over === '1' ? '完结' : book.is_over === '0' ? '连载' : ''),
+    read_count: Number(book.read_count) || 0,
+    category: book.category || '',
+    sub_title: String(book.sub_title || ''),
+    cover: book.cover || book.thumb_url || '',
+    intro,
+  };
+}
+
+/** 搜索结果 → 模板参数 */
+function buildSearchParams(keyword, list) {
+  const counter = {};
+  const cards = list.map((book, index) => {
+    counter[book.source] = (counter[book.source] || 0) + 1;
+    // 七猫把「女强・连载・201万字」塞在 sub_title 里
+    const segments = String(book.sub_title || '')
+      .split(/[・·|]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    const status = book.status || segments.find((item) => /连载|完结/.test(item)) || '';
+    const words = wordText(book.words) || segments.find((item) => /字/.test(item)) || '';
+
+    const chips = [{ text: SITES[book.source].name, kind: 'src' }];
+    if (book.score) chips.push({ text: `${book.score} 分`, kind: 'score' });
+    if (status) chips.push({ text: status, kind: /完结/.test(status) ? 'done' : '' });
+    if (words) chips.push({ text: words, kind: '' });
+
+    return {
+      no: index + 1,
+      title: book.title,
+      author: book.author,
+      category: book.category || segments[0] || '',
+      cover: book.cover,
+      intro: book.intro,
+      chips,
+    };
+  });
+
+  return {
+    keyword,
+    list: cards,
+    total: cards.length,
+    sources: Object.entries(counter).map(([key, count]) => ({ key, name: SITES[key].name, count })),
+    cacheMinutes: loadConfig().cache_minutes,
+    queryTime: timeText(),
+  };
+}
+
+function timeText() {
+  const now = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
 const SEARCH_REG = '^#?(?:搜(小说|番茄|七猫)|小说搜索)\\s*(.*)$';
 const DOWNLOAD_REG = '^#?(?:小说下载|下载小说)\\s*(.*)$';
 const HELP_REG = '^#?小说(?:帮助|菜单|指令|功能)$';
@@ -245,6 +323,14 @@ export class Novel extends plugin {
 
     searchCache.set(String(e.user_id), { time: Date.now(), keyword, list });
 
+    try {
+      const image = await render(e, SEARCH_TPL, buildSearchParams(keyword, list), { retType: 'base64' });
+      await e.reply(imageSegment(image), true);
+      return true;
+    } catch (err) {
+      logger.warn(`[小说插件] 搜索图片渲染失败，回退合并转发：${err.message}`);
+    }
+
     const text = `「${keyword}」搜索结果（${list.length}条）\n` + list.map((b, i) => this.formatBook(b, i + 1)).join('\n\n') + `\n\n回复 #小说下载 序号 下载（${loadConfig().cache_minutes}分钟内有效）`;
     await this.replyRich(e, text);
     return true;
@@ -254,18 +340,7 @@ export class Novel extends plugin {
     const cfg = loadConfig();
     const params = source === 'fanqie' ? { keyword, count: Math.min(cfg.search_count, 30) } : { keyword, page: '1' };
     const res = await post(SITES[source].search, params, SEARCH_TIMEOUT_MS);
-    return (res.books || []).slice(0, cfg.search_count).map((b) => ({
-      source,
-      book_id: String(b.book_id),
-      title: b.title || '未知书名',
-      author: b.author || '未知',
-      chapter_count: Number(b.chapter_count) || 0,
-      score: b.score || '',
-      status: b.status || (b.is_over === '1' ? '完结' : b.is_over === '0' ? '连载' : ''),
-      intro: String(b.abstract || b.intro || '')
-        .replace(/\s+/g, ' ')
-        .trim(),
-    }));
+    return (res.books || []).slice(0, cfg.search_count).map((book) => normalizeBook(source, book));
   }
 
   formatBook(b, i) {

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/Novel/search.css">
+</head>
+<body>
+    <div class="page">
+        <div class="sheet">
+            <div class="head">
+                <div class="head-main">
+                    <div class="eyebrow">搜索结果</div>
+                    <h1>{{keyword}}</h1>
+                    <div class="src-row">
+                        {{each sources item}}
+                        <span class="src-chip src-{{item.key}}"><i></i>{{item.name}} {{item.count}}</span>
+                        {{/each}}
+                    </div>
+                </div>
+                <div class="total">
+                    <b>{{total}}</b>
+                    <span>本</span>
+                </div>
+            </div>
+
+            <div class="grid">
+                {{each list item}}
+                <div class="book">
+                    <div class="bno">{{item.no}}</div>
+                    <div class="cover">
+                        {{if item.cover}}<img src="{{item.cover}}" onerror="this.style.display='none'">{{/if}}
+                    </div>
+                    <div class="binfo">
+                        <div class="btitle">{{item.title}}</div>
+                        <div class="bmeta">{{item.author}}{{if item.category}} · {{item.category}}{{/if}}</div>
+                        {{if item.chips.length}}
+                        <div class="chips">
+                            {{each item.chips chip}}
+                            <span class="chip{{if chip.kind}} {{chip.kind}}{{/if}}">{{chip.text}}</span>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        {{if item.intro}}
+                        <div class="bintro">{{item.intro}}</div>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+
+            <div class="foot">
+                <span class="hint">回复 <b>#小说下载 序号</b> 下载</span>
+                <span class="dot"></span>
+                <span>{{cacheMinutes}} 分钟内有效</span>
+                <span class="dot"></span>
+                <span>{{queryTime}}</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
