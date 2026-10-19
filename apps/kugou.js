@@ -14,8 +14,9 @@ const RING_RADIUS = 61;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 const Y_SEGMENTS = 5;
 const MEDAL_LIMIT = 4;
-const SONG_LIMIT = 5;
-const CARD_LIMIT = 30;
+const SONG_LIMIT = 6;
+const CARD_LIMIT = 10;
+const HOBBY_LIMIT = 6;
 const REQUEST_TIMEOUT_MS = 30_000;
 const POLL_MS = 10_000;
 const LOGIN_TIMEOUT_MS = 5 * 60_000;
@@ -97,6 +98,47 @@ function niceTop(value, segments = Y_SEGMENTS) {
   return Math.ceil(padded / segments) * segments;
 }
 
+/** 星座按生日切分：[月, 日起点, 名称]，1 月 19 日前落在摩羯 */
+const ZODIAC_CUTOFF = [
+  [1, 20, '水瓶座'],
+  [2, 19, '双鱼座'],
+  [3, 21, '白羊座'],
+  [4, 20, '金牛座'],
+  [5, 21, '双子座'],
+  [6, 22, '巨蟹座'],
+  [7, 23, '狮子座'],
+  [8, 23, '处女座'],
+  [9, 23, '天秤座'],
+  [10, 24, '天蝎座'],
+  [11, 23, '射手座'],
+  [12, 22, '摩羯座'],
+];
+
+function parseDate(text) {
+  const at = new Date(String(text || '').replace(/-/g, '/')).getTime();
+  return Number.isNaN(at) ? 0 : at;
+}
+
+function zodiacOf(birthday) {
+  const month = Number(String(birthday).slice(5, 7));
+  const day = Number(String(birthday).slice(8, 10));
+  if (!month || !day) return '';
+  let sign = '摩羯座';
+  for (const [m, d, name] of ZODIAC_CUTOFF) {
+    if (month > m || (month === m && day >= d)) sign = name;
+  }
+  return sign;
+}
+
+function ageOf(birthday) {
+  const at = parseDate(birthday);
+  if (!at) return 0;
+  const born = new Date(at);
+  const now = new Date();
+  const passed = now.getMonth() > born.getMonth() || (now.getMonth() === born.getMonth() && now.getDate() >= born.getDate());
+  return Math.max(0, now.getFullYear() - born.getFullYear() - (passed ? 0 : 1));
+}
+
 function buildProfileParams(info, account, running) {
   const profile = info.profile || {};
   const homepage = info.homepage || {};
@@ -151,8 +193,59 @@ function buildProfileParams(info, account, running) {
     .map(({ index, periodValue: _value, ...rest }) => rest);
 
   const rank = Number(detail.friend_rank?.rank) || 0;
-  const regAt = new Date(String(profile.reg_time || '').replace(/-/g, '/')).getTime();
-  const joinDays = Number.isNaN(regAt) ? 0 : Math.max(0, Math.floor((Date.now() - regAt) / 86_400_000));
+  const regAt = parseDate(profile.reg_time);
+  const joinDays = regAt ? Math.max(0, Math.floor((Date.now() - regAt) / 86_400_000)) : 0;
+
+  // 资料 / 爱好
+  const hobbies = String(profile.hobby || '')
+    .split(/[,，、]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, HOBBY_LIMIT);
+  const birthday = String(profile.birthday || '');
+  const birthdayText = /^\d{4}-\d{2}-\d{2}/.test(birthday) ? birthday.slice(5, 10) : '';
+
+  // 会员：svip_level/svip_score 来自 profile（homepage 也有同名兜底）
+  const summary = listen.summary || {};
+  const svipLevel = Number(profile.svip_level ?? homepage.svip_level) || 0;
+  const svipScore = Number(profile.svip_score ?? homepage.svip_score) || 0;
+  const vipType = Number(homepage.vip_type ?? profile.vip_type) || 0;
+  const vipBeginRaw = String(homepage.su_vip_begin_time || '');
+  const vipEndRaw = String(homepage.su_vip_end_time || '');
+  const vipEndAt = parseDate(vipEndRaw);
+  const vipEndDays = vipEndAt ? Math.ceil((vipEndAt - Date.now()) / 86_400_000) : null;
+  const hasVip = Boolean(vipType || svipLevel || svipScore || vipEndAt);
+
+  /*
+   * su_vip_begin/end_time 只做「区间展示」，不判定当前是否在会员期内：
+   * 实测该账号 begin→end 恰好 7 天且时分秒相同（像体验卡），但同一份数据里 vip_type=6 又表示有权益，
+   * 两者会打架，所以过去的时间只写「XX 年 SVIP 有效期」，不写「已过期」。
+   */
+  let vipDateText = '';
+  let vipDateNote = '';
+  if (vipEndAt && vipEndAt > Date.now()) {
+    vipDateText = vipEndDays === 0 ? '今天到期' : `剩 ${vipEndDays} 天`;
+    vipDateNote = `${vipEndRaw.slice(0, 10)} 到期`;
+  } else if (vipEndAt) {
+    const begin = vipBeginRaw.slice(5, 10).replace('-', '.');
+    const end = vipEndRaw.slice(5, 10).replace('-', '.');
+    vipDateText = begin && begin !== end ? `${begin} ~ ${end}` : vipEndRaw.slice(0, 10);
+    vipDateNote = vipEndRaw.slice(0, 4) === vipBeginRaw.slice(0, 4) ? `${vipEndRaw.slice(0, 4)} 年 SVIP 有效期` : 'SVIP 有效期';
+  } else if (vipType || svipLevel) {
+    vipDateText = '长期有效';
+    vipDateNote = '无到期记录';
+  }
+
+  const rights = [
+    { name: '音乐包', on: (Number(homepage.m_type) || 0) > 0 },
+    { name: '畅听', on: vipType > 0 },
+    { name: '听书', on: (Number(homepage.bookvip_valid) || 0) > 0 },
+  ];
+
+  // 时光机
+  const summaryText = String(summary.text || '');
+
+  const cardTotal = Number(info.musicCards?.total) || cards.length;
 
   return {
     nickname,
@@ -176,8 +269,26 @@ function buildProfileParams(info, account, running) {
     fans: homepage.fans ?? 0,
     friends: homepage.friends ?? 0,
     visitors: homepage.visitors ?? 0,
-    friendRank: rank ? `No.${rank}` : '-',
+    friendRank: rank ? `No.${rank}` : summary.is_enable_friend_rank ? '未上榜' : '-',
+    rankLabel: summary.is_enable_friend_rank ? '好友榜' : '好友榜未开启',
+    rankOn: Boolean(summary.is_enable_friend_rank),
     joinDays,
+    registerYears: joinDays >= 365 ? String(Math.floor(joinDays / 365)) : '',
+    hobbies,
+    zodiac: zodiacOf(birthday),
+    age: ageOf(birthday),
+    birthdayText,
+    occupation: String(profile.occupation || ''),
+    hasVip,
+    vipType,
+    svipLevel,
+    vipSeal: svipLevel ? String(svipLevel) : 'VIP',
+    svipScore,
+    vipDateText,
+    vipDateNote,
+    vipPlate: homepage.nameplate_url || homepage.nameplate_url_v1 || '',
+    rights,
+    summaryText,
     todayHours: hoursText(listen.todaySeconds),
     totalHours: hoursText(listen.totalSeconds),
     listenDays: detail.accumulate_listen_days ?? 0,
@@ -207,6 +318,7 @@ function buildProfileParams(info, account, running) {
     medalExtra,
     cards,
     cardCount: cards.length,
+    cardTotal,
     favCount: info.favorites?.count ?? 0,
     songCount: info.songs?.total ?? 0,
     queryTime: listen.serverTime || profile.servertime || '',

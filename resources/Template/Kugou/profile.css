@@ -81,7 +81,7 @@ body {
     display: flex;
     align-items: center;
     gap: 18px;
-    padding: 22px 20px 20px;
+    padding: 22px 20px 14px;
 }
 
 .ring-wrap {
@@ -171,6 +171,7 @@ body {
 
 .name-line h1 {
     max-width: 248px;
+    min-width: 0;
     overflow: hidden;
     color: var(--t1);
     font-size: 23px;
@@ -199,6 +200,13 @@ body {
     border-color: rgba(129, 199, 132, 0.36);
     background: rgba(129, 199, 132, 0.2);
     color: #a5e3a8;
+}
+
+.tag-vip {
+    border-color: rgba(255, 214, 150, 0.5);
+    background: rgba(255, 190, 90, 0.26);
+    color: #ffe9c4;
+    font-weight: 500;
 }
 
 .sign {
@@ -255,6 +263,211 @@ body {
 .rank span {
     color: rgba(255, 225, 180, 0.78);
     font-size: 10px;
+}
+
+.rank-off {
+    opacity: 0.5;
+    border-color: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.rank-off b {
+    color: var(--t2);
+    font-size: 13px;
+}
+
+.rank-off span {
+    color: var(--t3);
+}
+
+/* ---------------- 爱好 / 资料 ---------------- */
+.facts {
+    position: relative;
+    margin: 0 20px 12px;
+}
+
+.fact-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.fact-row + .fact-row {
+    margin-top: 7px;
+}
+
+.fact-k {
+    width: 26px;
+    flex: none;
+    color: var(--t3);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+}
+
+.hobby {
+    padding: 2px 9px;
+    border: 1px solid rgba(144, 202, 249, 0.34);
+    border-radius: 999px;
+    background: linear-gradient(160deg, rgba(144, 202, 249, 0.22), rgba(66, 165, 245, 0.1));
+    color: #dcefff;
+    font-size: 10.5px;
+    font-style: normal;
+    line-height: 1.5;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.hobby-none {
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: var(--t3);
+}
+
+.fact {
+    color: var(--t2);
+    font-size: 10.5px;
+    font-style: normal;
+    line-height: 1.5;
+}
+
+.fact + .fact::before {
+    content: '·';
+    margin-right: 6px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---------------- 会员卡 ---------------- */
+.vip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 16px 12px;
+    padding: 12px 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 214, 150, 0.38);
+    border-radius: 16px;
+    background: linear-gradient(150deg, rgba(255, 205, 125, 0.26), rgba(255, 165, 70, 0.12) 52%, rgba(255, 255, 255, 0.05));
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    backdrop-filter: blur(18px) saturate(170%);
+    box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.4), 0 8px 24px rgba(0, 0, 0, 0.26);
+}
+
+.vip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(240px 120px at 82% -30%, rgba(255, 255, 255, 0.26), transparent 70%);
+    pointer-events: none;
+}
+
+.vip-seal {
+    position: relative;
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border: 1px solid rgba(255, 232, 190, 0.5);
+    border-radius: 15px;
+    background: linear-gradient(160deg, #ffd995, #f0a94a 58%, #c97a1f);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 6px 16px rgba(180, 110, 20, 0.38);
+}
+
+.vip-seal b {
+    color: #4a2a05;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.vip-seal span {
+    color: rgba(74, 42, 5, 0.72);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+}
+
+.vip-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.vip-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.vip-title b {
+    color: #ffe8bf;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.vip-plate {
+    height: 16px;
+    max-width: 108px;
+    object-fit: contain;
+    opacity: 0.9;
+}
+
+.vip-rights {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+}
+
+.vip-rights i {
+    padding: 1px 7px;
+    border: 1px solid rgba(255, 220, 160, 0.26);
+    border-radius: 6px;
+    color: rgba(255, 236, 210, 0.45);
+    font-size: 9.5px;
+    font-style: normal;
+    line-height: 1.55;
+}
+
+.vip-rights i.on {
+    border-color: rgba(255, 214, 150, 0.55);
+    background: rgba(255, 190, 90, 0.28);
+    color: #fff3dc;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.vip-score {
+    margin-left: auto;
+    color: rgba(255, 235, 205, 0.55);
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+}
+
+.vip-end {
+    flex: none;
+    padding-left: 13px;
+    border-left: 1px dashed rgba(255, 220, 160, 0.3);
+    text-align: right;
+}
+
+.vip-end b {
+    display: block;
+    color: #ffe8bf;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.vip-end span {
+    color: rgba(255, 236, 210, 0.55);
+    font-size: 9.5px;
 }
 
 /* ---------------- kpis ---------------- */
@@ -512,6 +725,52 @@ body {
     font-style: normal;
     line-height: 1;
     text-align: center;
+}
+
+/* ---------------- 时光机 ---------------- */
+.memory {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 20px;
+    padding: 13px 14px;
+    border: 1px solid rgba(206, 147, 216, 0.26);
+    border-radius: 16px;
+    background: linear-gradient(150deg, rgba(179, 157, 219, 0.22), rgba(255, 255, 255, 0.05) 64%);
+    -webkit-backdrop-filter: blur(18px) saturate(165%);
+    backdrop-filter: blur(18px) saturate(165%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), var(--glass-shadow);
+}
+
+.mem-mark {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(206, 147, 216, 0.42);
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(206, 147, 216, 0.36), rgba(124, 77, 255, 0.18));
+    color: #f0e2ff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.mem-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.mem-body b {
+    display: block;
+    color: var(--t1);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
 }
 
 /* ---------------- split ---------------- */

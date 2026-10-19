@@ -34,6 +34,7 @@
                     <div class="name-line">
                         <h1>{{nickname}}</h1>
                         {{if gender}}<span class="tag">{{gender}}</span>{{/if}}
+                        {{if vipType}}<span class="tag tag-vip">会员</span>{{/if}}
                         {{if running}}<span class="tag tag-live">刷歌中</span>{{/if}}
                     </div>
                     <div class="sign">{{signature}}</div>
@@ -46,11 +47,52 @@
                     </div>
                 </div>
 
-                <div class="rank">
+                <div class="rank{{if !rankOn}} rank-off{{/if}}">
                     <b>{{friendRank}}</b>
-                    <span>好友榜</span>
+                    <span>{{rankLabel}}</span>
                 </div>
             </div>
+
+            <div class="facts">
+                <div class="fact-row">
+                    <span class="fact-k">爱好</span>
+                    {{each hobbies item}}<i class="hobby">{{item}}</i>{{/each}}
+                    {{if !hobbies.length}}<i class="hobby hobby-none">未填写</i>{{/if}}
+                </div>
+                {{if zodiac || age || birthdayText || occupation || registerYears}}
+                <div class="fact-row">
+                    <span class="fact-k">资料</span>
+                    {{if zodiac}}<i class="fact">{{zodiac}}</i>{{/if}}
+                    {{if age}}<i class="fact">{{age}} 岁</i>{{/if}}
+                    {{if birthdayText}}<i class="fact">{{birthdayText}} 生日</i>{{/if}}
+                    {{if occupation}}<i class="fact">{{occupation}}</i>{{/if}}
+                    {{if registerYears}}<i class="fact">{{registerYears}} 年酷狗</i>{{/if}}
+                </div>
+                {{/if}}
+            </div>
+
+            {{if hasVip}}
+            <div class="vip">
+                <div class="vip-seal">
+                    <b>{{vipSeal}}</b>
+                    <span>SVIP</span>
+                </div>
+                <div class="vip-main">
+                    <div class="vip-title">
+                        <b>酷狗超级会员</b>
+                        {{if vipPlate}}<img class="vip-plate" src="{{vipPlate}}" onerror="this.style.display='none'">{{/if}}
+                    </div>
+                    <div class="vip-rights">
+                        {{each rights item}}<i class="{{if item.on}}on{{/if}}">{{item.name}}</i>{{/each}}
+                        <span class="vip-score">成长值 {{svipScore}}</span>
+                    </div>
+                </div>
+                <div class="vip-end">
+                    <b>{{vipDateText}}</b>
+                    {{if vipDateNote}}<span>{{vipDateNote}}</span>{{/if}}
+                </div>
+            </div>
+            {{/if}}
 
             <div class="kpis">
                 <div class="kpi"><b>{{follows}}</b><span>关注</span></div>
@@ -99,6 +141,16 @@
                 </div>
             </div>
 
+            {{if summaryText}}
+            <div class="sec"><em></em>时光机<span class="sec-note">来自听歌足迹</span></div>
+            <div class="memory">
+                <div class="mem-mark">那年</div>
+                <div class="mem-body">
+                    <b>{{summaryText}}</b>
+                </div>
+            </div>
+            {{/if}}
+
             <div class="split">
                 <div class="pane pane-song">
                     <div class="sec"><em></em>今日最常听</div>
@@ -146,7 +198,7 @@
             </div>
 
             {{if cards.length}}
-            <div class="sec"><em></em>收听战绩<span class="sec-note">最近 {{cardCount}} 张</span></div>
+            <div class="sec"><em></em>收听战绩<span class="sec-note">共 {{cardTotal}} 张 · 展示最近 {{cardCount}} 张</span></div>
             <div class="mc-grid">
                 {{each cards item}}
                 <div class="mcard">
