@@ -1,5 +1,6 @@
 import { Novel } from './apps/novel.js';
 import { Kugou } from './apps/kugou.js';
+import { Gomoku } from './apps/gomoku.js';
 logger.mark(`===============`);
 logger.mark(`${logger.blue('[书音插件]')} author Senior Horikawa ！！！`);
 logger.mark(`${logger.blue('[书音插件]')} version 0.0.1`);
@@ -8,4 +9,5 @@ logger.mark(`===============`);
 let apps = {};
 apps[Novel.name] = Novel;
 apps[Kugou.name] = Kugou;
+apps[Gomoku.name] = Gomoku;
 export { apps };

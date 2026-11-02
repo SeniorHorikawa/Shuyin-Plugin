@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/Gomoku/board.css">
+</head>
+<body>
+    <div class="card">
+        <h1>五子棋</h1>
+        <div class="sub">{{meText}} · 难度 {{difficulty}}</div>
+        <div class="status status-{{statusTone}}">{{statusText}}</div>
+        {{if aiMoveVisible}}
+        <div class="ai-move">{{aiMoveText}}</div>
+        {{/if}}
+        <div class="board-wrap">{{@ boardSvg}}</div>
+        <div class="hint">{{hint}}</div>
+    </div>
+</body>
+</html>

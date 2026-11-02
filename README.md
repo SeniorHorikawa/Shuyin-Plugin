@@ -2,9 +2,9 @@
 
 # 书音插件 · Shuyin-Plugin
 
-**一个跑在云崽（Yunzai）上的「小说 + 酷狗」全能小助手**
+**一个跑在云崽（Yunzai）上的「小说 + 酷狗 + 五子棋」全能小助手**
 
-搜书、整本下载，扫码登录、提交刷歌——一个插件全搞定。
+搜书、整本下载，扫码登录、提交刷歌，还能人机对弈五子棋——一个插件全搞定。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org)
@@ -12,7 +12,7 @@
 [![GitHub](https://img.shields.io/github/stars/SeniorHorikawa/Shuyin-Plugin?style=social)](https://github.com/SeniorHorikawa/Shuyin-Plugin)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/SeniorHorikawa/Shuyin-Plugin/pulls)
 
-<sub>番茄 / 七猫 搜索 · 起点 / 七猫 / 番茄 整书下载 · 酷狗扫码登录与刷歌</sub>
+<sub>番茄 / 七猫 搜索 · 起点 / 七猫 / 番茄 整书下载 · 酷狗扫码登录与刷歌 · 五子棋人机对弈</sub>
 
 </div>
 
@@ -41,6 +41,7 @@
 | 🎵 **酷狗登录** | 二维码扫码登录，轮询确认、可取消，ck + 设备信息本地持久化 |
 | ⏱️ **酷狗刷歌** | 提交指定时长刷歌，自动计算预计耗时并在完成后回报今日听歌增量 |
 | 👤 **账号信息** | 查询昵称、听歌等级、今日 / 累计听歌时长、地区、注册时间等 |
+| ♟️ **五子棋** | 人机对弈，简单 / 普通 / 困难三档难度；棋盘图片带 X/Y 坐标轴，AI 落子坐标实时展示 |
 
 ---
 
@@ -73,7 +74,7 @@ Yunzai/plugins/Shuyin-Plugin/config/novel.yaml
 
 | 字段 | 类型 | 说明 |
 | :-- | :-- | :-- |
-| `api_url` | string | 后端网关地址（番茄 / 七猫 / 起点 / 酷狗 action 共用），默认 `http://127.0.0.1:2017` |
+| `api_url` | string | 后端网关地址（番茄 / 七猫 / 起点 / 酷狗 / 五子棋 action 共用），默认 `http://127.0.0.1:2017` |
 | `QIDIAN_CK` | string | 起点读书完整请求头（含 `QDInfo` 等），仅在下载起点书籍时需要 |
 | `search_count` | number | 每个来源返回的搜索结果条数 |
 | `cache_minutes` | number | 搜索缓存有效分钟数，缓存期内可用「序号」直接下载 |
@@ -111,6 +112,20 @@ Yunzai/plugins/Shuyin-Plugin/config/novel.yaml
 | `#酷狗刷新` | 刷新 ck 并返回账号信息 |
 | `#我的酷狗` | 查看等级、今日 / 累计听歌时长等 |
 | `#酷狗帮助` | 查看指令菜单 |
+
+### ♟️ 五子棋
+
+| 指令 | 说明 |
+| :-- | :-- |
+| `#五子棋` | 开始一局（已开局则查看当前棋盘） |
+| `#五子棋开始 [难度]` | 新开一局，难度可选 简单 / 普通 / 困难 |
+| `#五子棋 <坐标>` | 落子，如 `#五子棋 H8` 或 `#五子棋 8 8` |
+| `#五子棋难度 <简单/普通/困难>` | 调整难度 |
+| `#五子棋执黑` / `#五子棋执白` | 选择先后手 |
+| `#五子棋重开` | 重开本局 |
+| `#五子棋帮助` / `#五子棋菜单` | 查看指令菜单 |
+
+> 坐标说明：X = 列（1~15，左→右），Y = 行（1~15，上→下）；列也可用字母 A~O（A=1、H=8、O=15）。黑先，连续五子获胜（无禁手）。AI 落子后，棋盘图片上方会显示其坐标。
 
 ---
 

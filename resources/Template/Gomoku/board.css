@@ -1,0 +1,97 @@
+/* 五子棋棋盘卡 —— 简洁暖木色风格（同 /wzq 网页） */
+:root {
+    --bg: #f2ead9;
+    --card: #fbf7ee;
+    --ink: #33302a;
+    --sub: #8a8378;
+    --accent: #b3702f;
+    --danger: #c0392b;
+    --success: #4c8c4a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+html,
+body {
+    background: var(--bg);
+}
+
+body {
+    width: 620px;
+    padding: 16px;
+    transform: scale(2);
+    transform-origin: 0 0;
+    color: var(--ink);
+    font-family: system-ui, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    text-align: center;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(90, 70, 40, 0.12);
+    padding: 18px 20px 20px;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.sub {
+    margin-top: 6px;
+    color: var(--sub);
+    font-size: 12px;
+}
+
+.status {
+    margin-top: 8px;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.status-win {
+    color: var(--danger);
+}
+
+.status-lose {
+    color: var(--sub);
+}
+
+.status-draw {
+    color: var(--sub);
+}
+
+.ai-move {
+    margin-top: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.board-wrap {
+    margin-top: 10px;
+}
+
+.board-wrap svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 576px;
+    margin: 0 auto;
+}
+
+.hint {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(90, 70, 40, 0.14);
+    color: var(--sub);
+    font-size: 11px;
+}
