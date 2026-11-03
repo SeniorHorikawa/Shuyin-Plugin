@@ -4,6 +4,10 @@ const STYLE = 4;
 const callback = (text, command) => ({ text, callback: command, style: STYLE });
 const input = (text, command) => ({ text, input: command, style: STYLE });
 
+// 0 基坐标 → 五子棋指令坐标（列字母 A~O + 行数字 1~15）
+const COL_LETTER = 'ABCDEFGHIJKLMNO';
+const coordCmd = (row, col) => `${COL_LETTER[col]}${row + 1}`;
+
 export default new (class Buttons {
   novelHelp() {
     return segment.button(
@@ -48,24 +52,30 @@ export default new (class Buttons {
     );
   }
 
-  gomokuHelp() {
+  gomokuHelp(difficulty = '简单') {
     return segment.button(
-      [callback('🎮 开始对局', '#五子棋开始'), callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白')],
+      [callback('🎮 开始对局', `#五子棋开始 ${difficulty}`), callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白')],
       [callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')],
+      [callback('💡 开启辅助', '#五子棋开启辅助'), callback('🔕 关闭辅助', '#五子棋关闭辅助')],
       [input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]
     );
   }
 
   gomokuBoard(game) {
     const active = Boolean(game && !game.over);
-    const firstRow = active
-      ? [input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]
-      : [callback('🔄 再来一局', '#五子棋重开'), callback('🎮 新开一局', '#五子棋开始'), callback('❓ 使用帮助', '#五子棋帮助')];
-
-    return segment.button(
-      firstRow,
-      [callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')],
-      [callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白')]
-    );
+    const rows = [];
+    if (active) {
+      rows.push([input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]);
+      rows.push([callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')]);
+      rows.push([callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白'), game.recommendOn === false ? callback('💡 开启辅助', '#五子棋开启辅助') : callback('🔕 关闭辅助', '#五子棋关闭辅助')]);
+      // 推荐落子：点按钮直接把坐标输入并落子
+      if (game.recommend && game.turn === game.me) {
+        const cmd = coordCmd(game.recommend.row, game.recommend.col);
+        rows.push([callback(`💡 推荐 ${cmd}`, `#五子棋 ${cmd}`)]);
+      }
+    } else {
+      rows.push([callback('🔄 再来一局', '#五子棋重开'), callback('🎮 新开一局', '#五子棋开始'), callback('❓ 使用帮助', '#五子棋帮助')]);
+    }
+    return segment.button(...rows);
   }
 })();

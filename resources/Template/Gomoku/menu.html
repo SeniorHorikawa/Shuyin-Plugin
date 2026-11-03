@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="{{pluginResources}}/Template/Gomoku/menu.css">
+</head>
+<body>
+    <div class="card">
+        <h1>五子棋</h1>
+        <div class="sub">自由规则 · 黑先 · 连续五子获胜</div>
+        <div class="menu">
+            {{each list item}}
+            <div class="row">
+                <span class="cmd">{{item.cmd}}</span>
+                <span class="desc">{{item.desc}}</span>
+            </div>
+            {{/each}}
+        </div>
+        <div class="note">{{note}}</div>
+        <div class="rcmd">{{recommendNote}}</div>
+        <div class="hint">{{hint}}</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+/* 五子棋菜单卡 —— 与棋盘卡一致的暖木色风格 */
+:root {
+    --bg: #f2ead9;
+    --card: #fbf7ee;
+    --ink: #33302a;
+    --sub: #8a8378;
+    --accent: #b3702f;
+    --success: #4c8c4a;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+html,
+body {
+    background: var(--bg);
+}
+
+body {
+    width: 620px;
+    padding: 16px;
+    transform: scale(2);
+    transform-origin: 0 0;
+    color: var(--ink);
+    font-family: system-ui, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    text-align: center;
+}
+
+.card {
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(90, 70, 40, 0.12);
+    padding: 20px 24px 20px;
+}
+
+h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+.sub {
+    margin-top: 6px;
+    color: var(--sub);
+    font-size: 12px;
+}
+
+.menu {
+    margin-top: 16px;
+    text-align: left;
+}
+
+.row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px dashed rgba(90, 70, 40, 0.16);
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.cmd {
+    flex: none;
+    white-space: nowrap;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.desc {
+    flex: 1;
+    color: var(--ink);
+    font-size: 13px;
+}
+
+.note {
+    margin-top: 12px;
+    color: var(--sub);
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.rcmd {
+    margin-top: 8px;
+    color: var(--success);
+    font-size: 11px;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.hint {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(90, 70, 40, 0.14);
+    color: var(--sub);
+    font-size: 11px;
+}

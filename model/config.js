@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   download_timeout_sec: 600,
   max_chapters: 0,
   size_warn_mb: 80,
+  gomoku_recommend: true,
 };
 
 const CONFIG_TEMPLATE = `# 小说插件配置
@@ -33,6 +34,8 @@ download_timeout_sec: 600
 max_chapters: 0
 # 发送前超过该大小（MB）提示
 size_warn_mb: 80
+# 五子棋是否开启「推荐落子」（true 显示推荐按钮，false 关闭）
+gomoku_recommend: true
 `;
 
 function loadConfig() {
