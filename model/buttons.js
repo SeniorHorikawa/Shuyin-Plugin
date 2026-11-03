@@ -4,8 +4,21 @@ const STYLE = 4;
 const callback = (text, command) => ({ text, callback: command, style: STYLE });
 const input = (text, command) => ({ text, input: command, style: STYLE });
 
-// 0 基坐标 → 五子棋指令坐标（两个数字：列,行，1 起）
-const coordCmd = (row, col) => `${col + 1},${row + 1}`;
+// 0 基坐标 → 五子棋指令坐标（两个数字：列 行，1 起）
+const coordCmd = (row, col) => `${col + 1} ${row + 1}`;
+
+// 难度标签（game.difficulty 是 easy/normal/hard）
+const DIFF_LABEL = { easy: '简单', normal: '普通', hard: '困难' };
+const DIFFS = [
+  { label: '简单', emoji: '😊' },
+  { label: '普通', emoji: '🙂' },
+  { label: '困难', emoji: '😈' },
+];
+
+// 难度按钮行：只显示未选择的难度（当前难度不显示，避免重复）
+function diffRow(current) {
+  return DIFFS.filter(({ label }) => label !== current).map(({ label, emoji }) => callback(`${emoji} ${label}`, `#五子棋难度 ${label}`));
+}
 
 export default new (class Buttons {
   novelHelp() {
@@ -54,7 +67,7 @@ export default new (class Buttons {
   gomokuHelp(difficulty = '简单') {
     return segment.button(
       [callback('🎮 开始对局', `#五子棋开始 ${difficulty}`), callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白')],
-      [callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')],
+      diffRow(difficulty),
       [callback('💡 开启辅助', '#五子棋开启辅助'), callback('🔕 关闭辅助', '#五子棋关闭辅助')],
       [input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]
     );
@@ -65,7 +78,7 @@ export default new (class Buttons {
     const rows = [];
     if (active) {
       rows.push([input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]);
-      rows.push([callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')]);
+      rows.push(diffRow(DIFF_LABEL[game.difficulty] || '普通'));
       rows.push([callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白'), assistOn === false ? callback('💡 开启辅助', '#五子棋开启辅助') : callback('🔕 关闭辅助', '#五子棋关闭辅助')]);
       // 推荐落子：点按钮直接把坐标输入并落子
       if (game.recommend && game.turn === game.me) {
