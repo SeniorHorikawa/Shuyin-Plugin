@@ -61,13 +61,13 @@ export default new (class Buttons {
     );
   }
 
-  gomokuBoard(game) {
+  gomokuBoard(game, assistOn = true) {
     const active = Boolean(game && !game.over);
     const rows = [];
     if (active) {
       rows.push([input('📍 输入坐标', '#五子棋 '), callback('🔄 重开', '#五子棋重开'), callback('❓ 使用帮助', '#五子棋帮助')]);
       rows.push([callback('😊 简单', '#五子棋难度 简单'), callback('🙂 普通', '#五子棋难度 普通'), callback('😈 困难', '#五子棋难度 困难')]);
-      rows.push([callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白'), game.recommendOn === false ? callback('💡 开启辅助', '#五子棋开启辅助') : callback('🔕 关闭辅助', '#五子棋关闭辅助')]);
+      rows.push([callback('♟️ 执黑先手', '#五子棋执黑'), callback('⚪ 执白后手', '#五子棋执白'), assistOn === false ? callback('💡 开启辅助', '#五子棋开启辅助') : callback('🔕 关闭辅助', '#五子棋关闭辅助')]);
       // 推荐落子：点按钮直接把坐标输入并落子
       if (game.recommend && game.turn === game.me) {
         const cmd = coordCmd(game.recommend.row, game.recommend.col);

@@ -2,7 +2,7 @@
 import plugin from '../../../lib/plugins/plugin.js';
 import { post } from '../model/api.js';
 import { imageSegment, render } from '../model/render.js';
-import { getGame, setGame } from '../model/gomoku_store.js';
+import { getGame, setGame, getAssist, setAssist } from '../model/gomoku_store.js';
 import { loadConfig } from '../model/config.js';
 import Buttons from '../model/buttons.js';
 
@@ -50,7 +50,6 @@ function newGame(difficulty, me) {
     difficulty,
     lastMove: null, // { row, col, by: 'human'|'ai' }
     aiLast: null, // { row, col } AI 最近一手
-    recommendOn: loadConfig().gomoku_recommend !== false, // 是否自动请求推荐落子（辅助）
     recommend: null, // { row, col } 最近一次推荐落点
     startedAt: Date.now(),
   };
@@ -209,10 +208,7 @@ function buildMenuParams() {
       { cmd: '#五子棋重开', desc: '重开本局' },
     ],
     note: '坐标：X=列（1~15，左→右），Y=行（1~15，上→下）；列也可用字母 A~O（A=1，H=8，O=15）。',
-    recommendNote:
-      loadConfig().gomoku_recommend !== false
-        ? '推荐落子默认已开启：AI 落子后会自动附带「推荐」按钮，点一下即可按建议落子；可用 #五子棋关闭辅助 关闭。'
-        : '推荐落子默认关闭：发送 #五子棋开启辅助 打开，或改 config/novel.yaml 的 gomoku_recommend: true。',
+    recommendNote: '推荐落子（辅助）：AI 落子后会自动附带「推荐」按钮，点一下即可按建议落子；可用 #五子棋开启辅助 / #五子棋关闭辅助 随时开关。',
     hint: '回复 #五子棋 开始对局',
   };
 }
@@ -257,6 +253,12 @@ export class Gomoku extends plugin {
     return DIFFICULTY_LABEL[game?.difficulty] || '简单';
   }
 
+  /** 该用户是否开启推荐落子（辅助）：按 user_id 存 Map，未设置时用配置默认值 */
+  assistOn(userId) {
+    const v = getAssist(userId);
+    return v === undefined ? loadConfig().gomoku_recommend !== false : v;
+  }
+
   helpText() {
     return [
       '【五子棋】',
@@ -284,7 +286,7 @@ export class Gomoku extends plugin {
     }
     const game = getGame(userId);
     if (game) {
-      const aiRes = await this.advanceAi(game); // 若轮到 AI（例如上次 AI 未响应），顺带推进
+      const aiRes = await this.advanceAi(game, userId); // 若轮到 AI（例如上次 AI 未响应），顺带推进
       await this.replyBoard(e, game, aiRes.ok ? '' : `⚠ AI 未响应：${aiRes.error}`);
       return true;
     }
@@ -331,13 +333,12 @@ export class Gomoku extends plugin {
   async toggleAssist(e) {
     const m = e.msg.match(ASSIST_RE);
     const enable = m[1] === '开启';
-    const game = getGame(String(e.user_id));
-    if (!game) {
-      await e.reply(['你还没有开始对局，发送 #五子棋 开始。', Buttons.gomokuHelp('简单')], true);
-      return true;
+    const userId = String(e.user_id);
+    setAssist(userId, enable);
+    if (!enable) {
+      const game = getGame(userId);
+      if (game) game.recommend = null;
     }
-    game.recommendOn = enable;
-    if (!enable) game.recommend = null;
     await e.reply(`推荐落子已${enable ? '开启' : '关闭'}。${enable ? 'AI 落子后会自动附带推荐按钮。' : ''}`, true);
     return true;
   }
@@ -359,7 +360,7 @@ export class Gomoku extends plugin {
   async beginGame(e, difficulty, me) {
     const game = newGame(difficulty, me);
     setGame(String(e.user_id), game);
-    const aiRes = await this.advanceAi(game);
+    const aiRes = await this.advanceAi(game, String(e.user_id));
     await this.replyBoard(e, game, aiRes.ok ? '' : `⚠ AI 未响应：${aiRes.error}`);
     return true;
   }
@@ -372,7 +373,7 @@ export class Gomoku extends plugin {
       return true;
     }
     if (game.over) {
-      await e.reply(['本局已结束，发送 #五子棋重开 再来一局。', Buttons.gomokuBoard(game)], true);
+      await e.reply(['本局已结束，发送 #五子棋重开 再来一局。', Buttons.gomokuBoard(game, this.assistOn(userId))], true);
       return true;
     }
     if (game.turn !== game.me) {
@@ -397,13 +398,13 @@ export class Gomoku extends plugin {
       game.turn = 3 - game.me;
     }
 
-    const aiRes = await this.advanceAi(game);
+    const aiRes = await this.advanceAi(game, userId);
     await this.replyBoard(e, game, aiRes.ok ? '' : `⚠ AI 未响应：${aiRes.error}`);
     return true;
   }
 
   /** 轮到 AI 时请求 wzq_move 并落子；返回 { ok, error? } */
-  async advanceAi(game) {
+  async advanceAi(game, userId) {
     const ai = 3 - game.me;
     if (game.over || game.turn !== ai) return { ok: true };
 
@@ -411,7 +412,7 @@ export class Gomoku extends plugin {
     try {
       m = await post(
         'wzq_move',
-        { board: game.board, difficulty: game.difficulty, aiColor: ai, turn: ai, recommend: game.recommendOn !== false },
+        { board: game.board, difficulty: game.difficulty, aiColor: ai, turn: ai, recommend: this.assistOn(userId) },
         REQUEST_TIMEOUT_MS
       );
     } catch (err) {
@@ -452,16 +453,17 @@ export class Gomoku extends plugin {
   }
 
   async replyBoard(e, game, note = '') {
+    const userId = String(e.user_id);
     const params = buildParams(game);
     if (note) params.noteText = note;
     try {
       const image = await render(e, BOARD_TPL, params, { retType: 'base64' });
-      await e.reply([imageSegment(image), Buttons.gomokuBoard(game)], true);
+      await e.reply([imageSegment(image), Buttons.gomokuBoard(game, this.assistOn(userId))], true);
       return true;
     } catch (err) {
       logger.warn(`[${TAG}] 棋盘渲染失败，回退文字：${err.message}`);
     }
-    await e.reply([this.textBoard(game), Buttons.gomokuBoard(game)], true);
+    await e.reply([this.textBoard(game), Buttons.gomokuBoard(game, this.assistOn(userId))], true);
     return true;
   }
 

@@ -4,6 +4,9 @@
  * 这里用模块级 Map，进程生命周期内持久，按 user_id 隔离。 */
 const games = new Map();
 
+// 推荐落子（辅助）开关：也按 user_id 存 Map，进程内持久，独立于单局对局
+const assists = new Map();
+
 function getGame(userId) {
   return games.get(String(userId));
 }
@@ -16,4 +19,12 @@ function deleteGame(userId) {
   games.delete(String(userId));
 }
 
-export { games, getGame, setGame, deleteGame };
+function getAssist(userId) {
+  return assists.get(String(userId));
+}
+
+function setAssist(userId, on) {
+  assists.set(String(userId), Boolean(on));
+}
+
+export { games, getGame, setGame, deleteGame, getAssist, setAssist };
