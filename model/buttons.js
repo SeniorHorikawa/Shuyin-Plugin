@@ -4,9 +4,8 @@ const STYLE = 4;
 const callback = (text, command) => ({ text, callback: command, style: STYLE });
 const input = (text, command) => ({ text, input: command, style: STYLE });
 
-// 0 基坐标 → 五子棋指令坐标（列字母 A~O + 行数字 1~15）
-const COL_LETTER = 'ABCDEFGHIJKLMNO';
-const coordCmd = (row, col) => `${COL_LETTER[col]}${row + 1}`;
+// 0 基坐标 → 五子棋指令坐标（两个数字：列,行，1 起）
+const coordCmd = (row, col) => `${col + 1},${row + 1}`;
 
 export default new (class Buttons {
   novelHelp() {
