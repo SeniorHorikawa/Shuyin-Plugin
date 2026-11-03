@@ -3,6 +3,7 @@ import plugin from '../../../lib/plugins/plugin.js';
 import { post } from '../model/api.js';
 import { imageSegment, render } from '../model/render.js';
 import { getGame, setGame } from '../model/gomoku_store.js';
+import Buttons from '../model/buttons.js';
 
 const TAG = '五子棋';
 const BOARD_TPL = 'Template/Gomoku/board';
@@ -212,7 +213,7 @@ export class Gomoku extends plugin {
   }
 
   async help(e) {
-    await e.reply(this.helpText(), true);
+    await e.reply([this.helpText(), Buttons.gomokuHelp()], true);
     return true;
   }
 
@@ -311,11 +312,11 @@ export class Gomoku extends plugin {
     const userId = String(e.user_id);
     const game = getGame(userId);
     if (!game) {
-      await e.reply('你还没有开始对局，发送 #五子棋 开始。', true);
+      await e.reply(['你还没有开始对局，发送 #五子棋 开始。', Buttons.gomokuHelp()], true);
       return true;
     }
     if (game.over) {
-      await e.reply('本局已结束，发送 #五子棋重开 再来一局。', true);
+      await e.reply(['本局已结束，发送 #五子棋重开 再来一局。', Buttons.gomokuBoard(game)], true);
       return true;
     }
     if (game.turn !== game.me) {
@@ -388,12 +389,12 @@ export class Gomoku extends plugin {
     if (note) params.noteText = note;
     try {
       const image = await render(e, BOARD_TPL, params, { retType: 'base64' });
-      await e.reply(imageSegment(image), true);
+      await e.reply([imageSegment(image), Buttons.gomokuBoard(game)], true);
       return true;
     } catch (err) {
       logger.warn(`[${TAG}] 棋盘渲染失败，回退文字：${err.message}`);
     }
-    await e.reply(this.textBoard(game), true);
+    await e.reply([this.textBoard(game), Buttons.gomokuBoard(game)], true);
     return true;
   }
 

@@ -5,6 +5,7 @@ import path from 'node:path';
 import { post } from '../model/api.js';
 import { imageSegment, render } from '../model/render.js';
 import { DATA_DIR, secondsText, sleep } from '../model/utils.js';
+import Buttons from '../model/buttons.js';
 
 const TAG = '酷狗刷歌';
 const STORE_DIR = `${DATA_DIR}/kugou`;
@@ -348,14 +349,14 @@ export class Kugou extends plugin {
   }
 
   async help(e) {
-    await e.reply(['【酷狗刷歌】', '#酷狗登录', '#酷狗取消登录 ', `#酷狗提交刷歌 分钟 [歌名]`, '#酷狗停止刷歌', '#酷狗刷新', '#我的酷狗'].join('\n'), true);
+    await e.reply([['【酷狗刷歌】', '#酷狗登录', '#酷狗取消登录 ', `#酷狗提交刷歌 分钟 [歌名]`, '#酷狗停止刷歌', '#酷狗刷新', '#我的酷狗'].join('\n'), Buttons.kugouHelp()], true);
     return true;
   }
 
   async login(e) {
     const userId = String(e.user_id);
     if (this.logins.has(userId)) {
-      await e.reply('你已有一个酷狗登录任务在进行中，可发送 #酷狗取消登录 取消。', true);
+      await e.reply(['你已有一个酷狗登录任务在进行中，可发送 #酷狗取消登录 取消。', Buttons.kugouLogin()], true);
       return true;
     }
 
@@ -367,7 +368,7 @@ export class Kugou extends plugin {
       return true;
     }
 
-    await e.reply([segment.image('base64://' + qr.qrcode), '请用酷狗 APP 扫码并确认登录'], true);
+    await e.reply([segment.image('base64://' + qr.qrcode), '请用酷狗 APP 扫码并确认登录', Buttons.kugouLogin()], true);
 
     this.pollLogin(userId, e, qr.key).catch((err) => logger.warn(`[${TAG}] 登录轮询异常：${err.message}`));
     return true;
@@ -389,20 +390,20 @@ export class Kugou extends plugin {
   async submit(e) {
     const userId = String(e.user_id);
     if (this.tasks.has(userId)) {
-      await e.reply('你已有一个刷歌任务在进行中，可发送 #酷狗停止刷歌 停止。', true);
+      await e.reply(['你已有一个刷歌任务在进行中，可发送 #酷狗停止刷歌 停止。', Buttons.kugouAccount(true)], true);
       return true;
     }
 
     const account = store.read(userId);
     if (!account?.ck) {
-      await e.reply('你还没有登录酷狗，请先发送 #酷狗登录 扫码。', true);
+      await e.reply(['你还没有登录酷狗，请先发送 #酷狗登录 扫码。', Buttons.kugouNoLogin()], true);
       return true;
     }
 
     const [, rawMinutes, rawSong] = SUBMIT_RE.exec(e.msg) ?? [];
     const minutes = Number(rawMinutes ?? 0);
     if (!Number.isInteger(minutes) || minutes < 1 || minutes > MINUTES_LIMIT) {
-      await e.reply(['用法：#酷狗提交刷歌 分钟 [歌名]', `例如：#酷狗提交刷歌 10 ${DEFAULT_SONG}`, `分钟范围 1~${MINUTES_LIMIT}，歌名不填默认《${DEFAULT_SONG}》。`].join('\n'), true);
+      await e.reply([['用法：#酷狗提交刷歌 分钟 [歌名]', `例如：#酷狗提交刷歌 10 ${DEFAULT_SONG}`, `分钟范围 1~${MINUTES_LIMIT}，歌名不填默认《${DEFAULT_SONG}》。`].join('\n'), Buttons.kugouHelp()], true);
       return true;
     }
     const song = (rawSong ?? '').trim() || DEFAULT_SONG;
@@ -419,7 +420,7 @@ export class Kugou extends plugin {
     const etaSeconds = effective * SECONDS_PER_MINUTE;
 
     store.write(userId, { ...account, lastTaskId: task.taskId });
-    await e.reply(['已提交酷狗刷歌', `时长：${effective} 分钟（${task.backfill ? '回填今日' : '从当前时刻'}）`, `歌曲：${song}`, `预计耗时：约 ${secondsText(etaSeconds)}`, '', `约 ${secondsText(etaSeconds)} 后回报本次刷取结果，发送 #酷狗停止刷歌 可提前停止。`].join('\n'), true);
+    await e.reply([['已提交酷狗刷歌', `时长：${effective} 分钟（${task.backfill ? '回填今日' : '从当前时刻'}）`, `歌曲：${song}`, `预计耗时：约 ${secondsText(etaSeconds)}`, '', `约 ${secondsText(etaSeconds)} 后回报本次刷取结果，发送 #酷狗停止刷歌 可提前停止。`].join('\n'), Buttons.kugouAccount(true)], true);
 
     this.reportLater(userId, e, task.taskId, etaSeconds).catch((err) => logger.warn(`[${TAG}] 任务回报异常：${err.message}`));
     return true;
@@ -430,7 +431,7 @@ export class Kugou extends plugin {
     const entry = this.tasks.get(userId);
     const taskId = entry?.taskId ?? store.read(userId)?.lastTaskId;
     if (!taskId) {
-      await e.reply('你没有正在进行的酷狗刷歌任务。', true);
+      await e.reply(['你没有正在进行的酷狗刷歌任务。', Buttons.kugouAccount(false)], true);
       return true;
     }
 
@@ -440,7 +441,7 @@ export class Kugou extends plugin {
     }
     try {
       const state = await api.durationStop(taskId);
-      await e.reply(`已停止酷狗刷歌\n本次刷取：${secondsText(state.submitted)}`, true);
+      await e.reply([`已停止酷狗刷歌\n本次刷取：${secondsText(state.submitted)}`, Buttons.kugouAccount(false)], true);
     } catch (err) {
       logger.warn(`[${TAG}] 停止刷歌失败：${err.message}`);
       await e.reply('未知错误', true);
@@ -452,7 +453,7 @@ export class Kugou extends plugin {
     const userId = String(e.user_id);
     const account = store.read(userId);
     if (!account?.ck) {
-      await e.reply('你还没有登录酷狗，请先发送 #酷狗登录 扫码。', true);
+      await e.reply(['你还没有登录酷狗，请先发送 #酷狗登录 扫码。', Buttons.kugouNoLogin()], true);
       return true;
     }
 
@@ -478,9 +479,9 @@ export class Kugou extends plugin {
     const text = [`昵称：${nickname || '-'}`, `过期时间：${this.expireText(tExpireTime)}`].join('\n');
     const avatar = data.rawData?.pic || '';
     try {
-      await e.reply(avatar ? [segment.image(avatar), text] : text, true);
+      await e.reply(avatar ? [segment.image(avatar), text, Buttons.kugouAccount()] : [text, Buttons.kugouAccount()], true);
     } catch {
-      await e.reply(text, true);
+      await e.reply([text, Buttons.kugouAccount()], true);
     }
     return true;
   }
@@ -489,7 +490,7 @@ export class Kugou extends plugin {
     const userId = String(e.user_id);
     const account = store.read(userId);
     if (!account?.ck) {
-      await e.reply('你还没有登录酷狗，请先发送 #酷狗登录 扫码。', true);
+      await e.reply(['你还没有登录酷狗，请先发送 #酷狗登录 扫码。', Buttons.kugouNoLogin()], true);
       return true;
     }
 
@@ -506,13 +507,13 @@ export class Kugou extends plugin {
 
     try {
       const image = await render(e, PROFILE_TPL, params, { retType: 'base64' });
-      await e.reply(imageSegment(image), true);
+      await e.reply([imageSegment(image), Buttons.kugouAccount(running)], true);
       return true;
     } catch (err) {
       logger.warn(`[${TAG}] 资料图片渲染失败，回退文本：${err.message}`);
     }
 
-    await e.reply(this.profileText(info, account, userId, running), true);
+    await e.reply([this.profileText(info, account, userId, running), Buttons.kugouAccount(running)], true);
     return true;
   }
 
@@ -584,7 +585,7 @@ export class Kugou extends plugin {
             updatedAt: Date.now(),
           });
           logger.info(`[${TAG}] ${userId} 登录成功：${nickname || userid}`);
-          await e.reply([`酷狗登录成功: ${nickname ? `：${nickname}` : ''}(${userid || '-'})`, '发送 #我的酷狗 查看信息，发送 #酷狗提交刷歌 10 开始刷歌。'].join('\n'), true);
+          await e.reply([[`酷狗登录成功: ${nickname ? `：${nickname}` : ''}(${userid || '-'})`, '发送 #我的酷狗 查看信息，发送 #酷狗提交刷歌 10 开始刷歌。'].join('\n'), Buttons.kugouAccount(false)], true);
           return;
         }
 
@@ -612,7 +613,7 @@ export class Kugou extends plugin {
       await sleep(etaSeconds * 1000);
       if (entry.cancelled) return;
       const state = await api.durationStatus(taskId);
-      await e.reply(this.taskSummary(state), true);
+      await e.reply([this.taskSummary(state), Buttons.kugouAccount(false)], true);
     } catch (err) {
       logger.warn(`[${TAG}] 任务 ${taskId} 查询失败：${err.message}`);
       if (!entry.cancelled) await e.reply('未知错误', true);

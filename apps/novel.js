@@ -6,6 +6,7 @@ import { post } from '../model/api.js';
 import { loadConfig } from '../model/config.js';
 import { imageSegment, render } from '../model/render.js';
 import { fetchToFile, pickUrl, safeName } from '../model/utils.js';
+import Buttons from '../model/buttons.js';
 
 const CACHE_DIR = path.join(os.tmpdir(), 'novel_cache');
 const SEARCH_TPL = 'Template/Novel/search';
@@ -300,12 +301,12 @@ export class Novel extends plugin {
     const keyword = (m?.[2] || '').trim();
 
     if (!keyword) {
-      await e.reply(SEARCH_USAGE, true);
+      await e.reply([SEARCH_USAGE, Buttons.novelHelp()], true);
       return true;
     }
 
     const sources = sourceZh === '小说' ? ['fanqie', 'qimao'] : [sourceZh === '番茄' ? 'fanqie' : 'qimao'];
-    await e.reply(`正在搜索「${keyword}」，来源：${sources.map((i) => SITES[i].name).join('、')}…`, true);
+    await e.reply([`正在搜索「${keyword}」，来源：${sources.map((i) => SITES[i].name).join('、')}…`, Buttons.novelHelp()], true);
 
     const results = await Promise.allSettled(sources.map((i) => this.searchSource(i, keyword)));
     const list = results.flatMap((r) => (r.status === 'fulfilled' ? r.value : []));
@@ -317,7 +318,7 @@ export class Novel extends plugin {
         .filter(Boolean)
         .join('；');
       if (detail) logger.warn(`[小说插件] 搜索失败：${detail}`);
-      await e.reply(failed.length ? '搜索失败，请稍后再试' : `「${keyword}」没有搜到结果`, true);
+      await e.reply([failed.length ? '搜索失败，请稍后再试' : `「${keyword}」没有搜到结果`, Buttons.novelHelp()], true);
       return true;
     }
 
@@ -325,7 +326,7 @@ export class Novel extends plugin {
 
     try {
       const image = await render(e, SEARCH_TPL, buildSearchParams(keyword, list), { retType: 'base64' });
-      await e.reply(imageSegment(image), true);
+      await e.reply([imageSegment(image), Buttons.novelSearch(list.length)], true);
       return true;
     } catch (err) {
       logger.warn(`[小说插件] 搜索图片渲染失败，回退合并转发：${err.message}`);
@@ -333,6 +334,7 @@ export class Novel extends plugin {
 
     const text = `「${keyword}」搜索结果（${list.length}条）\n` + list.map((b, i) => this.formatBook(b, i + 1)).join('\n\n') + `\n\n回复 #小说下载 序号 下载（${loadConfig().cache_minutes}分钟内有效）`;
     await this.replyRich(e, text);
+    await e.reply(Buttons.novelSearch(list.length), true);
     return true;
   }
 
@@ -358,7 +360,7 @@ export class Novel extends plugin {
     const target = this.parseDownloadArg(m?.[1] || '', String(e.user_id));
 
     if (target.error === 'no-cache') {
-      await e.reply(['没有找到你的搜索结果（可能已过期）', '请先 #搜小说 关键词，再用 #小说下载 序号', '或直接 #小说下载 番茄:书号 / 七猫:书号 / 起点:书号'].join('\n'), true);
+      await e.reply([['没有找到你的搜索结果（可能已过期）', '请先 #搜小说 关键词，再用 #小说下载 序号', '或直接 #小说下载 番茄:书号 / 七猫:书号 / 起点:书号'].join('\n'), Buttons.novelHelp()], true);
       return true;
     }
     if (target.error === 'out-of-range') {
@@ -366,7 +368,7 @@ export class Novel extends plugin {
       return true;
     }
     if (target.error) {
-      await e.reply(DOWNLOAD_USAGE, true);
+      await e.reply([DOWNLOAD_USAGE, Buttons.novelHelp()], true);
       return true;
     }
 
@@ -506,7 +508,7 @@ export class Novel extends plugin {
   }
 
   async help(e) {
-    await e.reply(['【小说搜索下载】', '#搜小说 关键词 —— 同时搜索番茄/七猫', '#搜番茄 关键词 / #搜七猫 关键词', `#小说下载 序号 [章节数] —— 1~${INDEX_LIMIT} 视为搜索结果序号（限量仅番茄支持）`, '#小说下载 番茄:书号 [章节数] / #小说下载 七猫:书号 / #小说下载 起点:书号', '#起点下载 书号 / #七猫下载 书号 / #番茄下载 书号', '直接发起点/七猫/番茄分享链接也可下载整本', '', '序号需先搜索（缓存默认 15 分钟）；超过 100 的数字按书号处理（≥8 位算番茄）'].join('\n'), true);
+    await e.reply([['【小说搜索下载】', '#搜小说 关键词 —— 同时搜索番茄/七猫', '#搜番茄 关键词 / #搜七猫 关键词', `#小说下载 序号 [章节数] —— 1~${INDEX_LIMIT} 视为搜索结果序号（限量仅番茄支持）`, '#小说下载 番茄:书号 [章节数] / #小说下载 七猫:书号 / #小说下载 起点:书号', '#起点下载 书号 / #七猫下载 书号 / #番茄下载 书号', '直接发起点/七猫/番茄分享链接也可下载整本', '', '序号需先搜索（缓存默认 15 分钟）；超过 100 的数字按书号处理（≥8 位算番茄）'].join('\n'), Buttons.novelHelp()], true);
     return true;
   }
 }
