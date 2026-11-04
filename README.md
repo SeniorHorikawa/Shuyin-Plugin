@@ -81,7 +81,6 @@ Yunzai/plugins/Shuyin-Plugin/config/novel.yaml
 | `download_timeout_sec` | number | 整书下载 HTTP 超时（秒），大部头可调大 |
 | `max_chapters` | number | 番茄整书默认最大章节数，`0` 表示全本 |
 | `size_warn_mb` | number | 发送前超过该大小（MB）时提示 |
-| `gomoku_recommend` | boolean | 五子棋「推荐落子（辅助）」的默认开关（新用户默认值），运行时可用 `#五子棋开启辅助/关闭辅助` 按用户单独切换 |
 
 > 🔐 `config/novel.yaml` 含敏感信息，已在 `.gitignore` 中忽略，请勿提交到仓库。
 
@@ -131,7 +130,7 @@ Yunzai/plugins/Shuyin-Plugin/config/novel.yaml
 
 > 坐标说明：X = 列（1~15，左→右），Y = 行（1~15，上→下）；列也可用字母 A~O（A=1、H=8、O=15）。黑先，连续五子获胜（无禁手）。AI 落子后，棋盘图片上方会显示其坐标。菜单（`#五子棋帮助`）以棋盘同风格的图片展示。
 >
-> 💡 **推荐落子（辅助）**：AI 落子后会自动附带一个「💡 推荐 坐标」按钮，点一下即可按 AI 建议直接落子。开关**按用户记忆**（存在内存 Map 里，按 `user_id` 隔离），用 `#五子棋开启辅助` / `#五子棋关闭辅助` 切换；默认开启，可用 `config/novel.yaml` 的 `gomoku_recommend` 改默认值。
+> 💡 **推荐落子（辅助）**：AI 落子后会自动附带一个「💡 推荐 坐标」按钮，点一下即可按 AI 建议直接落子。开关**按用户记忆**（存在内存 Map 里，按 `user_id` 隔离），用 `#五子棋开启辅助` / `#五子棋关闭辅助` 切换，默认开启。
 
 ---
 

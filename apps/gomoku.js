@@ -3,7 +3,6 @@ import plugin from '../../../lib/plugins/plugin.js';
 import { post } from '../model/api.js';
 import { imageSegment, render } from '../model/render.js';
 import { getGame, setGame, getAssist, setAssist } from '../model/gomoku_store.js';
-import { loadConfig } from '../model/config.js';
 import Buttons from '../model/buttons.js';
 
 const TAG = '五子棋';
@@ -253,10 +252,9 @@ export class Gomoku extends plugin {
     return DIFFICULTY_LABEL[game?.difficulty] || '简单';
   }
 
-  /** 该用户是否开启推荐落子（辅助）：按 user_id 存 Map，未设置时用配置默认值 */
+  /** 该用户是否开启推荐落子（辅助）：按 user_id 存 Map，默认开启 */
   assistOn(userId) {
-    const v = getAssist(userId);
-    return v === undefined ? loadConfig().gomoku_recommend !== false : v;
+    return getAssist(userId) !== false;
   }
 
   helpText() {
